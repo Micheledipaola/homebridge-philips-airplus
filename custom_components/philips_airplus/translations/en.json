@@ -1,0 +1,128 @@
+{
+  "config": {
+    "step": {
+      "auth_method": {
+        "title": "Authentication Method",
+        "description": "Choose how you want to authenticate with your Philips account.\n\n**Email + verification code (recommended)** — uses the same cloud account as the Philips app and Google Home. Enter your email, receive a code by email, enter it. No browser or DevTools needed. Works with both **Philips Air+** and **Philips HomeID** accounts.\n\n**OAuth PKCE (advanced)** — only needed as a fallback. Requires opening a browser and using the DevTools Network tab to capture a redirect URL. Only works for accounts registered via the **Philips Air+ app**.",
+        "data": {
+          "auth_method": "Authentication Method"
+        }
+      },
+      "oauth": {
+        "title": "Philips Air+ Authentication",
+        "description": "1) Open this login URL in your browser:\n{authorize_url}\n\n2) Open DevTools (F12) → Network tab — before logging in.\n3) Complete Philips login and authorize the app.\n4) Find the `com.philips.air://loginredirect?code=...` redirect in the Network tab and copy the full URL.\n5) Paste it into the field below.",
+        "data": {
+          "auth_code": "Authorization Code"
+        },
+        "data_description": {
+          "auth_code": "Paste the code value from the login redirect URL"
+        }
+      },
+      "select_device": {
+        "title": "Select Device",
+        "description": "Choose the Philips Air+ device you want to control",
+        "data": {
+          "device": "Device"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Philips Air+",
+        "description": "Your authentication token has expired. Please re-authenticate to continue using your Philips Air+ device."
+      },
+      "email": {
+        "title": "Philips Air+ Email Authentication",
+        "description": "Enter the email address associated with your Philips account. A verification code will be sent to this address.",
+        "data": {
+          "email": "Email Address"
+        }
+      },
+      "email_otp": {
+        "title": "Philips Air+ Verification Code",
+        "description": "A verification code has been sent to **{email}**. Check your inbox and enter the code below.",
+        "data": {
+          "otp_code": "Verification Code"
+        }
+      },
+      "email_otp_options": {
+        "title": "Philips Air+ Verification Code",
+        "description": "A verification code has been sent to **{email}**. Check your inbox and enter the code below.",
+        "data": {
+          "otp_code": "Verification Code"
+        }
+      }
+    },
+    "error": {
+      "missing_code": "Authorization code is required.",
+      "invalid_email": "Please enter a valid email address.",
+      "invalid_token": "Invalid access token. Please check your token and try again.",
+      "no_devices": "No devices found in your Philips Air+ account.",
+      "auth_failed": "Authentication failed. Please try again.",
+      "cannot_connect": "Unable to connect to Philips Air+ service.",
+      "otp_send_failed": "Failed to send verification code. Check your email address and try again.",
+      "otp_verify_failed": "Failed to verify the code. Make sure you entered it correctly.",
+      "unknown": "Unexpected error during authentication."
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "auth_failed": "Authentication failed.",
+      "reauth_successful": "Re-authentication successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Philips Air+ Options",
+        "description": "Device: {device_name}\n\nTo re-authenticate:\n1) Open this login URL in your browser:\n{authorize_url}\n\n2) Open DevTools (F12) → Network tab — before logging in.\n3) Complete Philips login and authorize the app.\n4) Find the `com.philips.air://loginredirect?code=...` redirect and copy the full URL.\n5) Paste it into the field below.\n\nLeave the field empty to keep current tokens unchanged.",
+        "data": {
+          "enable_mqtt": "Enable MQTT",
+          "auth_code": "Authorization Code (optional)"
+        },
+        "data_description": {
+          "enable_mqtt": "Disable to stop cloud/MQTT activity for this integration",
+          "auth_code": "Paste a fresh OAuth code to re-authenticate without removing the integration"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "filter_replace_percentage": {
+        "name": "Filter Replacement"
+      },
+      "filter_replace_hours_remaining": {
+        "name": "Filter Replacement – Hours Remaining"
+      },
+      "filter_clean_percentage": {
+        "name": "Filter Cleaning"
+      },
+      "filter_clean_hours_remaining": {
+        "name": "Filter Cleaning – Hours Remaining"
+      },
+      "pm25": {
+        "name": "PM2.5"
+      },
+      "allergen_index": {
+        "name": "Allergen Index"
+      },
+      "fan_level": {
+        "name": "Fan Level"
+      },
+      "diag_d0312c": {
+        "name": "Diagnostic D0312C"
+      }
+    },
+    "button": {
+      "reset_filter_clean": {
+        "name": "Reset Filter Cleaning Timer"
+      },
+      "reset_filter_replace": {
+        "name": "Reset Filter Replacement Timer"
+      }
+    },
+    "switch": {
+      "standby_monitor": {
+        "name": "Sensor Standby Monitor"
+      }
+    }
+  }
+}

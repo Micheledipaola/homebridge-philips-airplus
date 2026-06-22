@@ -1,0 +1,128 @@
+{
+  "config": {
+    "step": {
+      "auth_method": {
+        "title": "Authentifizierungsmethode",
+        "description": "Wähle, wie du dich bei deinem Philips-Konto authentifizieren möchtest.\n\n**Email + Bestätigungscode (empfohlen)** — nutzt denselben Cloud-Account wie die Philips-App und Google Home. E-Mail eingeben, Code per E-Mail erhalten, eingeben. Kein Browser, keine DevTools nötig. Funktioniert mit **Philips Air+** und **Philips HomeID**.\n\n**OAuth PKCE (fortgeschritten)** — nur als Fallback nötig. Browser öffnen, DevTools-Netzwerk-Tab verwenden, um die Weiterleitungs-URL zu erfassen. Funktioniert nur mit Konten der **Philips Air+ App**.",
+        "data": {
+          "auth_method": "Authentifizierungsmethode"
+        }
+      },
+      "oauth": {
+        "title": "Philips Air+ Authentifizierung",
+        "description": "1) Öffne diese Login-URL im Browser:\n{authorize_url}\n\n2) DevTools öffnen (F12) → Netzwerk-Tab – vor dem Einloggen.\n3) Philips-Login durchführen und App autorisieren.\n4) Im Netzwerk-Tab die Weiterleitung zu `com.philips.air://loginredirect?code=...` suchen und die vollständige URL kopieren.\n5) URL unten einfügen.",
+        "data": {
+          "auth_code": "Autorisierungscode"
+        },
+        "data_description": {
+          "auth_code": "Den Code-Wert aus der Login-Weiterleitungs-URL hier einfügen"
+        }
+      },
+      "select_device": {
+        "title": "Gerät auswählen",
+        "description": "Wähle das Philips Air+ Gerät aus, das du steuern möchtest",
+        "data": {
+          "device": "Gerät"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Philips Air+ erneut authentifizieren",
+        "description": "Dein Authentifizierungstoken ist abgelaufen. Bitte authentifiziere dich erneut, um dein Philips Air+ Gerät weiter nutzen zu können."
+      },
+      "email": {
+        "title": "Philips Air+ E-Mail-Authentifizierung",
+        "description": "Gib die E-Mail-Adresse deines Philips-Kontos ein. Ein Bestätigungscode wird an diese Adresse gesendet.",
+        "data": {
+          "email": "E-Mail-Adresse"
+        }
+      },
+      "email_otp": {
+        "title": "Philips Air+ Bestätigungscode",
+        "description": "Ein Bestätigungscode wurde an **{email}** gesendet. Überprüfe deinen Posteingang und gib den Code unten ein.",
+        "data": {
+          "otp_code": "Bestätigungscode"
+        }
+      },
+      "email_otp_options": {
+        "title": "Philips Air+ Bestätigungscode",
+        "description": "Ein Bestätigungscode wurde an **{email}** gesendet. Überprüfe deinen Posteingang und gib den Code unten ein.",
+        "data": {
+          "otp_code": "Bestätigungscode"
+        }
+      }
+    },
+    "error": {
+      "missing_code": "Autorisierungscode ist erforderlich.",
+      "invalid_email": "Bitte gib eine gültige E-Mail-Adresse ein.",
+      "invalid_token": "Ungültiger Zugriffstoken. Bitte überprüfe deinen Token und versuche es erneut.",
+      "no_devices": "Keine Geräte in deinem Philips Air+ Konto gefunden.",
+      "auth_failed": "Authentifizierung fehlgeschlagen. Bitte versuche es erneut.",
+      "cannot_connect": "Verbindung zum Philips Air+ Dienst nicht möglich.",
+      "otp_send_failed": "Senden des Bestätigungscodes fehlgeschlagen. Überprüfe deine E-Mail-Adresse und versuche es erneut.",
+      "otp_verify_failed": "Überprüfung des Codes fehlgeschlagen. Stelle sicher, dass du ihn korrekt eingegeben hast.",
+      "unknown": "Unerwarteter Fehler bei der Authentifizierung."
+    },
+    "abort": {
+      "already_configured": "Dieses Gerät ist bereits konfiguriert.",
+      "auth_failed": "Authentifizierung fehlgeschlagen.",
+      "reauth_successful": "Erneute Authentifizierung erfolgreich."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Philips Air+ Optionen",
+        "description": "Gerät: {device_name}\n\nZur erneuten Authentifizierung:\n1) Öffne diese Login-URL im Browser:\n{authorize_url}\n\n2) DevTools öffnen (F12) → Netzwerk-Tab – vor dem Einloggen.\n3) Philips-Login durchführen und App autorisieren.\n4) Im Netzwerk-Tab die Weiterleitung zu `com.philips.air://loginredirect?code=...` suchen und die vollständige URL kopieren.\n5) URL unten einfügen.\n\nFeld leer lassen, um die aktuellen Token unverändert zu behalten.",
+        "data": {
+          "enable_mqtt": "MQTT aktivieren",
+          "auth_code": "Autorisierungscode (optional)"
+        },
+        "data_description": {
+          "enable_mqtt": "Deaktivieren, um Cloud-/MQTT-Aktivität für diese Integration zu stoppen",
+          "auth_code": "Neuen OAuth-Code einfügen, um sich ohne Entfernen der Integration neu zu authentifizieren"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "filter_replace_percentage": {
+        "name": "Filterwechsel"
+      },
+      "filter_replace_hours_remaining": {
+        "name": "Filterwechsel – verbleibende Stunden"
+      },
+      "filter_clean_percentage": {
+        "name": "Filterreinigung"
+      },
+      "filter_clean_hours_remaining": {
+        "name": "Filterreinigung – verbleibende Stunden"
+      },
+      "pm25": {
+        "name": "Feinstaub PM2.5"
+      },
+      "allergen_index": {
+        "name": "Allergen-Index"
+      },
+      "fan_level": {
+        "name": "Lüfterstufe"
+      },
+      "diag_d0312c": {
+        "name": "Diagnose D0312C"
+      }
+    },
+    "button": {
+      "reset_filter_clean": {
+        "name": "Filterreinigung zurücksetzen"
+      },
+      "reset_filter_replace": {
+        "name": "Filterwechsel zurücksetzen"
+      }
+    },
+    "switch": {
+      "standby_monitor": {
+        "name": "Sensor-Standby"
+      }
+    }
+  }
+}

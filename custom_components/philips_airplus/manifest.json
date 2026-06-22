@@ -1,0 +1,16 @@
+{
+  "domain": "philips_airplus",
+  "name": "Philips Air+",
+  "version": "1.1.0",
+  "documentation": "https://github.com/NikGro/philips-air-plus-homeassistant",
+  "issue_tracker": "https://github.com/NikGro/philips-air-plus-homeassistant/issues",
+  "dependencies": [],
+  "codeowners": [
+    "@NikGro"
+  ],
+  "requirements": [
+    "paho-mqtt>=1.6.0"
+  ],
+  "config_flow": true,
+  "iot_class": "cloud_polling"
+}
