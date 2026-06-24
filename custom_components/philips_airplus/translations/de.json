@@ -49,10 +49,23 @@
         "data": {
           "otp_code": "Bestätigungscode"
         }
+      },
+      "manual_device": {
+        "title": "Geräte-ID manuell eingeben",
+        "description": "Es wurden keine Geräte automatisch in deinem Konto gefunden.\n\nDie Philips Air+ App speichert die Geräte-ID lokal — du findest sie in der App:\n**Dein Gerät → ⚙ Einstellungen → Geräteinfo → Geräte-ID**\n\nGib die dort angezeigte Geräte-ID (UUID) ein.",
+        "data": {
+          "device_uuid": "Geräte-ID (UUID)",
+          "device_name": "Gerätename (optional)"
+        },
+        "data_description": {
+          "device_uuid": "Die UUID aus der Air+ App unter Geräteinfo, z.B. a1b2c3d4-1234-5678-abcd-ef0123456789",
+          "device_name": "Ein anzeigename für dieses Gerät in Home Assistant"
+        }
       }
     },
     "error": {
       "missing_code": "Autorisierungscode ist erforderlich.",
+      "missing_uuid": "Bitte gib eine Geräte-ID ein.",
       "invalid_email": "Bitte gib eine gültige E-Mail-Adresse ein.",
       "invalid_token": "Ungültiger Zugriffstoken. Bitte überprüfe deinen Token und versuche es erneut.",
       "no_devices": "Keine Geräte in deinem Philips Air+ Konto gefunden.",

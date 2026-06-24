@@ -219,17 +219,7 @@ class PhilipsAirplusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     ]
 
                     if not self._devices:
-                        errors["base"] = "no_devices"
-                        return self.async_show_form(
-                            step_id="email_otp",
-                            data_schema=vol.Schema(
-                                {vol.Required("otp_code"): str}
-                            ),
-                            description_placeholders={
-                                "email": self._email or ""
-                            },
-                            errors=errors,
-                        )
+                        return await self.async_step_manual_device()
 
                     return await self.async_step_select_device()
 
@@ -348,15 +338,7 @@ class PhilipsAirplusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ]
 
             if not self._devices:
-                errors["base"] = "no_devices"
-                return self.async_show_form(
-                    step_id="oauth",
-                    data_schema=vol.Schema({vol.Required("auth_code"): str}),
-                    errors=errors,
-                    description_placeholders={
-                        "authorize_url": getattr(self, "_oauth_authorize_url", "")
-                    },
-                )
+                return await self.async_step_manual_device()
 
             return await self.async_step_select_device()
 
@@ -439,6 +421,50 @@ class PhilipsAirplusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required("device"): vol.In(device_options),
                 }
             ),
+        )
+
+    async def async_step_manual_device(
+        self, user_input: Optional[Dict[str, Any]] = None
+    ) -> FlowResult:
+        """Fallback step: enter device UUID manually when cloud discovery finds nothing.
+
+        The Philips Air+ app stores the device UUID locally after pairing, so
+        some accounts report zero devices via the IoT API even though the device
+        is reachable via the cloud MQTT broker.  The UUID can be found in the
+        Air+ app under: your device → ⚙ Settings → Device info → Device ID.
+        """
+        errors: Dict[str, str] = {}
+        if user_input is not None:
+            raw_uuid = (user_input.get("device_uuid") or "").strip()
+            if not raw_uuid:
+                errors["device_uuid"] = "missing_uuid"
+            else:
+                device_name = (
+                    user_input.get("device_name") or ""
+                ).strip() or f"Philips Air+ {raw_uuid[:8]}"
+                self._devices = [
+                    PhilipsAirplusDevice(
+                        {
+                            "uuid": raw_uuid,
+                            "id": raw_uuid,
+                            "name": device_name,
+                            "deviceName": device_name,
+                            "friendlyName": device_name,
+                            "type": "manual",
+                        }
+                    )
+                ]
+                return await self.async_step_select_device()
+
+        return self.async_show_form(
+            step_id="manual_device",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("device_uuid"): str,
+                    vol.Optional("device_name", default="Philips Air Purifier"): str,
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_reauth(
