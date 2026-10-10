@@ -1,4 +1,80 @@
-# Philips Air+ Home Assistant Integration
+# Philips Air+ for Home Assistant and Homebridge
+
+This fork works with **both** Home Assistant (`custom_components/philips_airplus`, unchanged) and **Homebridge** (the Node plugin in `src/`). Both talk to the Philips/Versuni cloud with the same MQTT protocol as the official Air+ app and Google Home, and both read device definitions from the same `models.yaml`, so a model added there works in both.
+
+## Homebridge
+
+### What you get in HomeKit
+
+One accessory per purifier with:
+
+- **Air Purifier** — on/off, Auto/Manual, and a speed slider with one notch per manual mode of your model (e.g. Sleep → Medium → Turbo on the AC0651/10). Switching back to Manual restores the last manual speed.
+- **Air Quality Sensor** — PM2.5 (µg/m³) and a HomeKit air-quality level derived from it.
+- **Filter Maintenance** — main filter and pre-filter (cleaning), with life level, change alert (below 10% by default) and reset from the Home app. The reset writes the same value the official app does.
+
+State changes arrive in real time over MQTT; a status poll runs every 120 s as a safety net.
+
+### Install
+
+The plugin is not on npm. Install it from this repository (Homebridge UI → Terminal, or a shell on the Homebridge host):
+
+```bash
+sudo npm install -g git+https://github.com/<your-account>/philips-air-plus-homeassistant.git
+```
+
+Then restart Homebridge. Node 18.17 or newer and Homebridge 1.6+ (including 2.0 betas) are supported.
+
+### Log in
+
+1. Homebridge UI → Plugins → **Philips Air+** → Settings.
+2. Enter the email of your Philips account (Air+ or HomeID app) and press **Send code**.
+3. Type the code from the email and press **Log in**. The panel lists the purifiers it found and saves the login.
+4. Restart Homebridge.
+
+Every purifier in the account is added. To pick only some, or to rename them, fill in **Devices** with the UUIDs shown after login.
+
+Without Homebridge UI, run the login from a shell and paste the printed block into the `platforms` array of `config.json`:
+
+```bash
+philips-airplus-login you@example.com
+```
+
+```json
+{
+  "platform": "PhilipsAirPlus",
+  "name": "Philips Air+",
+  "email": "you@example.com",
+  "refreshToken": "…",
+  "clientId": "-XsK7O6iEkLml77yDGDUi0ku",
+  "userId": "…"
+}
+```
+
+The refresh token rotates on every use; the plugin keeps the current one in `<homebridge storage>/philips-airplus/`. If the Philips login ever expires, the log says so: log in again from the settings panel and restart.
+
+### Options
+
+| Key | Default | Meaning |
+|---|---|---|
+| `devices` | all | `[{ "uuid": "…", "name": "…", "model": "AC0651/10" }]` — pick/rename devices; `model` is only needed if auto-detection fails |
+| `airQualitySensor` | `true` | Show the PM2.5 sensor |
+| `filterSensors` | `true` | Show filter and pre-filter status |
+| `filterChangeThreshold` | `10` | Filter life (%) at or below which HomeKit shows "replace filter" |
+| `pollInterval` | `120` | Seconds between safety-net status polls |
+
+### Running alongside Home Assistant or the app
+
+Each client uses its own MQTT client id (`…_hb` for Homebridge, `…_ha` for Home Assistant), so the Air+ app, Home Assistant and Homebridge can all stay connected at the same time.
+
+### Notes
+
+- Models not in `models.yaml` still get on/off, PM2.5 and filters, and a warning in the log; modes need a `models.yaml` entry.
+- The AC3221 (PureProtect 3200i) mapping is unverified (see below), and so is its speed order in HomeKit.
+- `npm test` runs the plugin tests (protocol, HomeKit mapping, login flow with a mocked cloud).
+
+---
+
+# Home Assistant integration
 
 Custom integration for Philips Air+ air purifiers. It communicates with the Philips/Versuni **cloud** service using the same MQTT protocol as the official mobile app and Google Home — no local CoAP connection, so no CoAP-style dropouts.
 

@@ -1,0 +1,124 @@
+<div class="card mb-3" id="login-card">
+  <div class="card-body">
+    <h5 class="card-title mb-1">Philips account</h5>
+    <p class="card-text small text-muted mb-3" id="login-status">Not logged in.</p>
+
+    <div id="step-email">
+      <label for="email" class="form-label">Email of your Philips Air+ / HomeID account</label>
+      <div class="input-group">
+        <input type="email" class="form-control" id="email" placeholder="name@example.com" autocomplete="email" />
+        <button class="btn btn-primary" id="send-btn" type="button">Send code</button>
+      </div>
+    </div>
+
+    <div id="step-code" style="display: none">
+      <label for="code" class="form-label">Verification code sent to <strong id="email-echo"></strong></label>
+      <div class="input-group">
+        <input type="text" class="form-control" id="code" inputmode="numeric" autocomplete="one-time-code" />
+        <button class="btn btn-primary" id="verify-btn" type="button">Log in</button>
+      </div>
+      <button class="btn btn-link btn-sm px-0 mt-1" id="back-btn" type="button">Use a different email</button>
+    </div>
+
+    <div id="devices-box" class="mt-3" style="display: none">
+      <div class="small fw-bold mb-1">Purifiers found in the account</div>
+      <ul class="list-group list-group-flush small" id="devices-list"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  (async () => {
+    const $ = (id) => document.getElementById(id);
+    let configs = await homebridge.getPluginConfig();
+    if (!configs.length) {
+      configs = [{ platform: 'PhilipsAirPlus', name: 'Philips Air+' }];
+      await homebridge.updatePluginConfig(configs);
+    }
+    const cfg = () => configs[0];
+
+    function showStatus() {
+      const c = cfg();
+      $('login-status').textContent = c.refreshToken
+        ? `Logged in${c.email ? ' as ' + c.email : ''}. Log in again only if Homebridge reports the login has expired.`
+        : 'Not logged in. Enter your email to receive a verification code.';
+      if (c.email && !$('email').value) $('email').value = c.email;
+    }
+
+    function showStep(step) {
+      $('step-email').style.display = step === 'email' ? '' : 'none';
+      $('step-code').style.display = step === 'code' ? '' : 'none';
+      homebridge.fixScrollHeight();
+    }
+
+    function showDevices(devices) {
+      const ul = $('devices-list');
+      ul.innerHTML = '';
+      for (const d of devices) {
+        const li = document.createElement('li');
+        li.className = 'list-group-item px-0';
+        li.textContent = `${d.name} — ${d.model || 'model detected at startup'} (${d.uuid})`;
+        ul.appendChild(li);
+      }
+      if (!devices.length) {
+        const li = document.createElement('li');
+        li.className = 'list-group-item px-0 text-warning';
+        li.textContent = 'No purifiers found. Add the device UUID manually under Devices below.';
+        ul.appendChild(li);
+      }
+      $('devices-box').style.display = '';
+      homebridge.fixScrollHeight();
+    }
+
+    $('send-btn').addEventListener('click', async () => {
+      const email = $('email').value.trim();
+      homebridge.showSpinner();
+      try {
+        await homebridge.request('/send-code', { email });
+        $('email-echo').textContent = email;
+        showStep('code');
+        $('code').focus();
+        homebridge.toast.info('Check your inbox for the code.');
+      } catch (e) {
+        homebridge.toast.error(e.message, 'Could not send the code');
+      } finally {
+        homebridge.hideSpinner();
+      }
+    });
+
+    $('verify-btn').addEventListener('click', async () => {
+      homebridge.showSpinner();
+      try {
+        const r = await homebridge.request('/verify-code', { code: $('code').value });
+        Object.assign(configs[0], {
+          email: $('email').value.trim(),
+          refreshToken: r.refreshToken,
+          clientId: r.clientId,
+          userId: r.userId,
+        });
+        await homebridge.updatePluginConfig(configs);
+        await homebridge.savePluginConfig();
+        showDevices(r.devices || []);
+        showStep('email');
+        showStatus();
+        homebridge.toast.success('Logged in and saved. Restart Homebridge to apply.');
+      } catch (e) {
+        homebridge.toast.error(e.message, 'Login failed');
+      } finally {
+        homebridge.hideSpinner();
+      }
+    });
+
+    $('back-btn').addEventListener('click', () => showStep('email'));
+    $('email').addEventListener('keydown', (e) => e.key === 'Enter' && $('send-btn').click());
+    $('code').addEventListener('keydown', (e) => e.key === 'Enter' && $('verify-btn').click());
+
+    homebridge.addEventListener('configChanged', async () => {
+      configs = await homebridge.getPluginConfig();
+      showStatus();
+    });
+
+    showStatus();
+    homebridge.showSchemaForm();
+  })();
+</script>

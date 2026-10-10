@@ -1,0 +1,103 @@
+{
+  "pluginAlias": "PhilipsAirPlus",
+  "pluginType": "platform",
+  "singular": true,
+  "customUi": true,
+  "headerDisplay": "Philips Air+ purifiers through the Philips cloud (same protocol as the Air+ app and Google Home). Log in with the email of your Philips account; a verification code will be sent there.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Philips Air+",
+        "required": true
+      },
+      "email": {
+        "title": "Philips account email",
+        "type": "string",
+        "description": "For reference only — log in from the panel above."
+      },
+      "refreshToken": {
+        "title": "Refresh token",
+        "type": "string",
+        "description": "Filled in automatically by the login panel (or by the philips-airplus-login command)."
+      },
+      "clientId": {
+        "title": "OAuth client id",
+        "type": "string",
+        "description": "Filled in automatically. Air+ app client unless your account only works with the HomeID app."
+      },
+      "userId": {
+        "title": "User id",
+        "type": "string"
+      },
+      "devices": {
+        "title": "Devices",
+        "description": "Leave empty to add every purifier in the account. Add entries to pick devices or rename them.",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "uuid": { "title": "Device UUID", "type": "string", "required": true },
+            "name": { "title": "Name in HomeKit", "type": "string" },
+            "model": {
+              "title": "Model (optional)",
+              "type": "string",
+              "description": "e.g. AC0651/10. Normally detected automatically."
+            }
+          }
+        }
+      },
+      "airQualitySensor": {
+        "title": "Show air quality sensor (PM2.5)",
+        "type": "boolean",
+        "default": true
+      },
+      "filterSensors": {
+        "title": "Show filter and pre-filter status",
+        "type": "boolean",
+        "default": true
+      },
+      "filterChangeThreshold": {
+        "title": "Filter change alert below (%)",
+        "type": "integer",
+        "default": 10,
+        "minimum": 0,
+        "maximum": 50
+      },
+      "pollInterval": {
+        "title": "Status refresh interval (seconds)",
+        "type": "integer",
+        "default": 120,
+        "minimum": 30,
+        "description": "The device also pushes changes in real time; this is only a safety net."
+      }
+    }
+  },
+  "layout": [
+    "name",
+    {
+      "type": "fieldset",
+      "title": "Account",
+      "expandable": true,
+      "expanded": false,
+      "items": ["email", "refreshToken", "clientId", "userId"]
+    },
+    {
+      "key": "devices",
+      "type": "array",
+      "title": "Devices",
+      "expandable": true,
+      "expanded": false,
+      "items": ["devices[].uuid", "devices[].name", "devices[].model"]
+    },
+    {
+      "type": "fieldset",
+      "title": "Options",
+      "expandable": true,
+      "expanded": false,
+      "items": ["airQualitySensor", "filterSensors", "filterChangeThreshold", "pollInterval"]
+    }
+  ]
+}
