@@ -26,6 +26,9 @@ const FALLBACK_MODEL = {
   },
 };
 
+// Display light properties in the Philips D03 family (see kongo09/philips-airpurifier-coap).
+const LIGHT_KEYS = ['D03105', 'D0312D'];
+
 function pm25ToAirQuality(pm) {
   if (pm == null || Number.isNaN(pm)) return 0; // UNKNOWN
   if (pm <= 12) return 1; // EXCELLENT
@@ -175,9 +178,10 @@ class PurifierAccessory {
     target.onGet(() => this._targetState()).onSet((v) => this._setTargetState(v));
 
     if (this.speeds.length) {
-      // One slider notch per manual mode (Sleep … Turbo); 0 = off.
+      // The Home app always shows this as a percentage: split 0-100 into one
+      // band per manual mode (Sleep … Turbo) and snap to it after each change.
       p.getCharacteristic(Characteristic.RotationSpeed)
-        .setProps({ minValue: 0, maxValue: this.speeds.length, minStep: 1 })
+        .setProps({ minValue: 0, maxValue: 100, minStep: 1 })
         .onGet(() => this._rotationSpeed())
         .onSet((v) => this._setRotationSpeed(v));
     } else if (p.testCharacteristic(Characteristic.RotationSpeed)) {
@@ -216,7 +220,64 @@ class PurifierAccessory {
       }
       this.filters[f.kind] = s;
     }
+
+    // --- Sleep mode switch
+    this.sleepModeName = Object.keys(this.model.modes || {}).find((m) => m.toLowerCase() === 'sleep');
+    if (this.sleepModeName && cfg.sleepSwitch !== false) {
+      const s = this._service(Service.Switch, `${name} Sleep`, 'sleep');
+      s.getCharacteristic(Characteristic.On)
+        .onGet(() => this._isSleep())
+        .onSet((v) => this._setSleep(!!v));
+      this.sleepSwitch = s;
+    } else {
+      this._remove(Service.Switch, 'sleep');
+      this.sleepSwitch = null;
+    }
+
+    this._setupLight();
   }
+
+  /** Display light: only exposed once the device has reported a light property. */
+  _setupLight() {
+    const { Service, Characteristic } = this.hap;
+    const key = this._lightKey();
+    if (!key) return; // not reported yet; _learnLight() calls us again once it is
+    if (this.platform.config.displayLight === false) {
+      this._remove(Service.Lightbulb, 'display');
+      this.light = null;
+      return;
+    }
+    if (this.light) return;
+    const s = this._service(Service.Lightbulb, `${this.accessory.displayName} Display`, 'display');
+    s.getCharacteristic(Characteristic.On)
+      .onGet(() => this._lightOn())
+      .onSet((v) => this._setLight(v ? null : 0));
+    s.getCharacteristic(Characteristic.Brightness)
+      .setProps({ minValue: 0, maxValue: 100, minStep: 1 })
+      .onGet(() => this._lightBrightness())
+      .onSet((v) => this._setLight(v));
+    this.light = s;
+  }
+
+  _lightKey() {
+    const fromModel = this._prop('light_brightness');
+    if (fromModel) return fromModel;
+    if (this.accessory.context.lightKey) return this.accessory.context.lightKey;
+    return LIGHT_KEYS.find((k) => this.state[k] !== undefined) || null;
+  }
+
+  /**
+   * Two value schemes exist in the Philips D03 property family:
+   *  - percentage 0..100 (0 = off, 100 = full)
+   *  - three steps 0 / 115 / 123 (off / dim / full), some with 101 = auto
+   * The scheme is learned from the values the device reports.
+   */
+  _lightSteps() {
+    const s = this.model.properties && this.model.properties.light_steps;
+    if (Array.isArray(s)) return s;
+    return this.accessory.context.lightSteps ? [0, 115, 123] : null;
+  }
+
 
   // ------------------------------------------------------------ getters
 
@@ -258,7 +319,7 @@ class PurifierAccessory {
     const idx = m ? this.speeds.indexOf(m) : -1;
     // In Auto, show the slider at the "auto" position the app would use: middle.
     const i = idx >= 0 ? idx : Math.floor((this.speeds.length - 1) / 2);
-    return i + 1;
+    return Math.round(((i + 1) * 100) / this.speeds.length);
   }
 
   _filterLife(kind) {
@@ -266,6 +327,34 @@ class PurifierAccessory {
     const rem = this._num(`filter_${kind}_remaining`);
     if (!nom || rem === null || nom <= 0) return null;
     return Math.max(0, Math.min(100, Math.round((rem / nom) * 100)));
+  }
+
+  _isSleep() {
+    return this._isOn() && !!this.sleepModeName && this._currentModeName() === this.sleepModeName;
+  }
+
+  _lightRaw() {
+    const key = this._lightKey();
+    if (!key || this.state[key] === undefined) return null;
+    const n = Number(this.state[key]);
+    return Number.isNaN(n) ? null : n;
+  }
+
+  _lightOn() {
+    const v = this._lightRaw();
+    return v !== null && v > 0;
+  }
+
+  _lightBrightness() {
+    const v = this._lightRaw();
+    if (v === null || v <= 0) return 0;
+    const steps = this._lightSteps();
+    if (steps) {
+      if (v === 101) return 100; // auto: show as full
+      const idx = steps.indexOf(v);
+      return idx > 0 ? Math.round((idx * 100) / (steps.length - 1)) : 100;
+    }
+    return Math.min(100, v);
   }
 
   _filterChange(kind) {
@@ -323,9 +412,49 @@ class PurifierAccessory {
     this._ensureConnected();
     if (!this.speeds.length) return;
     if (v <= 0) return; // HomeKit sends Active=0 for "off"
-    const idx = Math.min(this.speeds.length, Math.max(1, Math.round(v))) - 1;
+    const n = this.speeds.length;
+    const idx = Math.min(n - 1, Math.max(0, Math.ceil((v * n) / 100) - 1));
     const name = this.speeds[idx];
     if (name !== this._currentModeName()) this._setMode(name);
+    setTimeout(() => this._pushAll(), 0);
+  }
+
+  async _setSleep(on) {
+    this._ensureConnected();
+    if (on === this._isSleep()) return;
+    if (on) {
+      this._setMode(this.sleepModeName);
+    } else {
+      // leave Sleep: back to Auto if the model has it, else the last manual speed
+      const auto = Object.keys(this.model.modes).find((m) => m.toLowerCase() === 'auto');
+      const back = auto || (this.speeds.includes(this.lastManualMode) && this.lastManualMode !== this.sleepModeName ? this.lastManualMode : this.speeds[1] || this.speeds[0]);
+      this._setMode(back);
+    }
+    setTimeout(() => this._pushAll(), 0);
+  }
+
+  /** @param {number|null} brightness 0 = off, null = "on" at the last level */
+  async _setLight(brightness) {
+    this._ensureConnected();
+    const key = this._lightKey();
+    if (!key) return;
+    let raw;
+    const steps = this._lightSteps();
+    if (brightness === 0) raw = 0;
+    else if (brightness === null) {
+      if (this._lightOn()) return;
+      raw = this.accessory.context.lastLightRaw || (steps ? steps[steps.length - 1] : 100);
+    } else if (steps) {
+      const idx = Math.max(1, Math.round((brightness * (steps.length - 1)) / 100));
+      raw = steps[idx];
+    } else {
+      raw = Math.max(1, Math.min(100, Math.round(brightness)));
+    }
+    if (raw === this._lightRaw()) return;
+    this.log.info(`Display light -> ${raw}`);
+    this.conn.setControl({ [key]: raw });
+    this.state[key] = raw;
+    if (raw > 0) this.accessory.context.lastLightRaw = raw;
     setTimeout(() => this._pushAll(), 0);
   }
 
@@ -358,11 +487,43 @@ class PurifierAccessory {
     if (port === this.conn.ports.filter_read) {
       Object.assign(this.filter, props);
     } else if (!port || port === this.conn.ports.status) {
+      if (!this._loggedKeys) {
+        this._loggedKeys = true;
+        this.log.info(`Status properties reported by the device: ${JSON.stringify(props)}`);
+      }
       Object.assign(this.state, props);
+      this._learnLight(props);
     } else {
       return;
     }
     this._pushAll();
+  }
+
+  /** Remember which light property the device uses and which value scheme. */
+  _learnLight(props) {
+    const ctx = this.accessory.context;
+    let changed = false;
+    if (!this._prop('light_brightness') && !ctx.lightKey) {
+      const k = LIGHT_KEYS.find((x) => props[x] !== undefined);
+      if (k) {
+        ctx.lightKey = k;
+        changed = true;
+        this.log.info(`Display light found on property ${k}`);
+      }
+    }
+    const key = this._lightKey();
+    if (key && props[key] !== undefined) {
+      const v = Number(props[key]);
+      if (v > 100 && !ctx.lightSteps) {
+        ctx.lightSteps = true;
+        changed = true;
+      }
+      if (v > 0) ctx.lastLightRaw = v;
+    }
+    if (changed) {
+      this.platform.updateAccessory(this.accessory);
+      this._setupLight();
+    }
   }
 
   _pushAll() {
@@ -380,6 +541,11 @@ class PurifierAccessory {
         this.aq.updateCharacteristic(Characteristic.PM2_5Density, Math.min(1000, Math.max(0, pm)));
       }
       this.aq.updateCharacteristic(Characteristic.StatusActive, this.conn.connected);
+    }
+    if (this.sleepSwitch) this.sleepSwitch.updateCharacteristic(Characteristic.On, this._isSleep());
+    if (this.light && this._lightRaw() !== null) {
+      this.light.updateCharacteristic(Characteristic.On, this._lightOn());
+      if (this._lightOn()) this.light.updateCharacteristic(Characteristic.Brightness, this._lightBrightness());
     }
     for (const [kind, s] of Object.entries(this.filters || {})) {
       const life = this._filterLife(kind);

@@ -8,7 +8,9 @@ This fork works with **both** Home Assistant (`custom_components/philips_airplus
 
 One accessory per purifier with:
 
-- **Air Purifier** — on/off, Auto/Manual, and a speed slider with one notch per manual mode of your model (e.g. Sleep → Medium → Turbo on the AC0651/10). Switching back to Manual restores the last manual speed.
+- **Air Purifier** — on/off, Auto/Manual, and a speed slider split into one band per manual mode of your model (e.g. 0–33% Sleep, 34–66% Medium, 67–100% Turbo on the AC0651/10); it snaps to the band after each change. Switching back to Manual restores the last manual speed.
+- **Sleep switch** — turns Sleep mode on; turning it off returns to Auto.
+- **Display light** — the purifier's display/LED as a dimmable light. It appears after the purifier first reports its light setting (property `D03105` or `D0312D`); devices with three light levels are detected automatically.
 - **Air Quality Sensor** — PM2.5 (µg/m³) and a HomeKit air-quality level derived from it.
 - **Filter Maintenance** — main filter and pre-filter (cleaning), with life level, change alert (below 10% by default) and reset from the Home app. The reset writes the same value the official app does.
 
@@ -59,6 +61,8 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 | `devices` | all | `[{ "uuid": "…", "name": "…", "model": "AC0651/10" }]` — pick/rename devices; `model` is only needed if auto-detection fails |
 | `airQualitySensor` | `true` | Show the PM2.5 sensor |
 | `filterSensors` | `true` | Show filter and pre-filter status |
+| `sleepSwitch` | `true` | Show the Sleep mode switch |
+| `displayLight` | `true` | Show the display light |
 | `filterChangeThreshold` | `10` | Filter life (%) at or below which HomeKit shows "replace filter" |
 | `pollInterval` | `120` | Seconds between safety-net status polls |
 

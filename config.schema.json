@@ -16,7 +16,7 @@
       "email": {
         "title": "Philips account email",
         "type": "string",
-        "description": "For reference only — log in from the panel above."
+        "description": "For reference only \u2014 log in from the panel above."
       },
       "refreshToken": {
         "title": "Refresh token",
@@ -39,8 +39,15 @@
         "items": {
           "type": "object",
           "properties": {
-            "uuid": { "title": "Device UUID", "type": "string", "required": true },
-            "name": { "title": "Name in HomeKit", "type": "string" },
+            "uuid": {
+              "title": "Device UUID",
+              "type": "string",
+              "required": true
+            },
+            "name": {
+              "title": "Name in HomeKit",
+              "type": "string"
+            },
             "model": {
               "title": "Model (optional)",
               "type": "string",
@@ -58,6 +65,17 @@
         "title": "Show filter and pre-filter status",
         "type": "boolean",
         "default": true
+      },
+      "sleepSwitch": {
+        "title": "Show a Sleep mode switch",
+        "type": "boolean",
+        "default": true
+      },
+      "displayLight": {
+        "title": "Show the display light as a dimmable light",
+        "type": "boolean",
+        "default": true,
+        "description": "Appears once the purifier reports its light setting."
       },
       "filterChangeThreshold": {
         "title": "Filter change alert below (%)",
@@ -82,7 +100,12 @@
       "title": "Account",
       "expandable": true,
       "expanded": false,
-      "items": ["email", "refreshToken", "clientId", "userId"]
+      "items": [
+        "email",
+        "refreshToken",
+        "clientId",
+        "userId"
+      ]
     },
     {
       "key": "devices",
@@ -90,14 +113,25 @@
       "title": "Devices",
       "expandable": true,
       "expanded": false,
-      "items": ["devices[].uuid", "devices[].name", "devices[].model"]
+      "items": [
+        "devices[].uuid",
+        "devices[].name",
+        "devices[].model"
+      ]
     },
     {
       "type": "fieldset",
       "title": "Options",
       "expandable": true,
       "expanded": false,
-      "items": ["airQualitySensor", "filterSensors", "filterChangeThreshold", "pollInterval"]
+      "items": [
+        "airQualitySensor",
+        "filterSensors",
+        "sleepSwitch",
+        "displayLight",
+        "filterChangeThreshold",
+        "pollInterval"
+      ]
     }
   ]
 }

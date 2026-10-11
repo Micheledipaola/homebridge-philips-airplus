@@ -53,7 +53,7 @@ test('maps status to the HomeKit air purifier', async (t) => {
 
   client().deliver(status({ D0310C: 18, D03221: 60 })); // Turbo, bad air
   assert.equal(p.getCharacteristic(Characteristic.TargetAirPurifierState).value, 0); // Manual
-  assert.equal(p.getCharacteristic(Characteristic.RotationSpeed).value, 3); // Turbo = notch 3 of 3
+  assert.equal(p.getCharacteristic(Characteristic.RotationSpeed).value, 100); // Turbo = top band
   assert.equal(aq.getCharacteristic(Characteristic.AirQuality).value, 4);
 
   client().deliver(status({ D0310D: 0 }));
@@ -67,7 +67,7 @@ test('handles concatenated JSON payloads in one frame', async (t) => {
   client().deliver(JSON.stringify(status({ D0310D: 2 })) + JSON.stringify(status({ D0310C: 17 })));
   const p = acc.getService(Service.AirPurifier);
   assert.equal(p.getCharacteristic(Characteristic.Active).value, 1);
-  assert.equal(p.getCharacteristic(Characteristic.RotationSpeed).value, 1); // Sleep = notch 1 of 3
+  assert.equal(p.getCharacteristic(Characteristic.RotationSpeed).value, 33); // Sleep = first of 3 bands
 });
 
 test('HomeKit commands become the same MQTT commands the app sends', async (t) => {
@@ -82,7 +82,10 @@ test('HomeKit commands become the same MQTT commands the app sends', async (t) =
   assert.deepEqual(c.published[0], { topic: `$aws/things/da-${UUID}/shadow/update`, payload: { state: { desired: { powerOn: true } } } });
 
   c.published.length = 0;
-  await p.getCharacteristic(Characteristic.RotationSpeed).handleSetRequest(2); // Sleep, Medium, Turbo -> Medium
+  await p.getCharacteristic(Characteristic.RotationSpeed).handleSetRequest(15); // ~15% -> first band (Sleep)
+  assert.deepEqual(c.published.find((x) => x.payload.cn === 'setPort').payload.data.properties, { D0310C: 17 });
+  c.published.length = 0;
+  await p.getCharacteristic(Characteristic.RotationSpeed).handleSetRequest(60); // Sleep, Medium, Turbo -> Medium
   const set = c.published.find((x) => x.payload.cn === 'setPort');
   assert.equal(set.topic, `da_ctrl/da-${UUID}/to_ncp`);
   assert.equal(set.payload.ct, 'mobile');
@@ -155,4 +158,54 @@ test('options can hide the extra services', async (t) => {
   t.after(() => dev.stop());
   assert.equal(acc.getService(Service.AirQualitySensor), undefined);
   assert.equal(acc.getService(Service.FilterMaintenance), undefined);
+});
+
+test('Sleep switch sets and leaves Sleep mode', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10');
+  t.after(() => dev.stop());
+  const c = client();
+  c.deliver(status({ D0310D: 2, D0310C: 0 }));
+  const sw = acc.getServiceById(Service.Switch, 'sleep');
+  assert.equal(sw.getCharacteristic(Characteristic.On).value, false);
+  c.published.length = 0;
+  await sw.getCharacteristic(Characteristic.On).handleSetRequest(true);
+  assert.deepEqual(c.published.find((x) => x.payload.cn === 'setPort').payload.data.properties, { D0310C: 17 });
+  c.deliver(status({ D0310C: 17 }));
+  assert.equal(sw.getCharacteristic(Characteristic.On).value, true);
+  c.published.length = 0;
+  await sw.getCharacteristic(Characteristic.On).handleSetRequest(false);
+  assert.deepEqual(c.published.find((x) => x.payload.cn === 'setPort').payload.data.properties, { D0310C: 0 }); // back to Auto
+});
+
+test('display light appears once reported; percentage scheme', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10');
+  t.after(() => dev.stop());
+  const c = client();
+  assert.equal(acc.getServiceById(Service.Lightbulb, 'display'), undefined);
+  c.deliver(status({ D0310D: 2, D03105: 100 }));
+  const l = acc.getServiceById(Service.Lightbulb, 'display');
+  assert.ok(l);
+  assert.equal(l.getCharacteristic(Characteristic.On).value, true);
+  assert.equal(l.getCharacteristic(Characteristic.Brightness).value, 100);
+  c.published.length = 0;
+  await l.getCharacteristic(Characteristic.Brightness).handleSetRequest(40);
+  assert.deepEqual(c.published[0].payload.data, { portName: 'Control', properties: { D03105: 40 } });
+  await l.getCharacteristic(Characteristic.On).handleSetRequest(false);
+  assert.deepEqual(c.published.filter((x) => x.payload.cn === 'setPort').at(-1).payload.data.properties, { D03105: 0 });
+  await l.getCharacteristic(Characteristic.On).handleSetRequest(true);
+  assert.deepEqual(c.published.filter((x) => x.payload.cn === 'setPort').at(-1).payload.data.properties, { D03105: 40 });
+});
+
+test('display light: three-step scheme is learned from values above 100', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10');
+  t.after(() => dev.stop());
+  const c = client();
+  c.deliver(status({ D0310D: 2, D03105: 123 }));
+  const l = acc.getServiceById(Service.Lightbulb, 'display');
+  assert.equal(l.getCharacteristic(Characteristic.Brightness).value, 100);
+  c.published.length = 0;
+  await l.getCharacteristic(Characteristic.Brightness).handleSetRequest(30);
+  assert.deepEqual(c.published[0].payload.data.properties, { D03105: 115 });
+  c.deliver(status({ D03105: 115 }));
+  assert.equal(l.getCharacteristic(Characteristic.Brightness).value, 50);
 });
