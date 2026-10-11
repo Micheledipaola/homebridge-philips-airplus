@@ -3,7 +3,7 @@
 // Values mirror custom_components/philips_airplus/const.py so both the Home
 // Assistant integration and the Homebridge plugin speak the same protocol.
 
-const PLUGIN_NAME = 'homebridge-philips-airplus';
+const PLUGIN_NAME = 'homebridge-philips-airplus-cloud';
 const PLATFORM_NAME = 'PhilipsAirPlus';
 
 const API_HOST = 'prod.eu-da.iot.versuni.com';

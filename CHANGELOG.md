@@ -4,6 +4,8 @@ The Home Assistant integration in `custom_components/` is unchanged from upstrea
 
 ## 0.3.0 — 2026-10-11
 
+- Published on npm as `homebridge-philips-airplus-cloud` (the name `homebridge-philips-airplus` belongs to an unrelated humidifier plugin). Installs from the earlier `.tgz` or git builds were named `homebridge-philips-airplus`: uninstall that first.
+
 - Option `sleepSwitchStyle: "purifier"`: Sleep shown as a second air purifier (purifier icon in Home), linked to the main one.
 - Diagnostics option `logDeviceData`: logs every port and the cloud shadow the purifier publishes.
 - Display light also detected on `D03104` (0/115/123); manual override with `displayLightProperty`.

@@ -1,4 +1,4 @@
-# homebridge-philips-airplus
+# homebridge-philips-airplus-cloud
 
 Homebridge plugin for **Philips Air+** air purifiers (AC0650, AC0651, AC1715, PureProtect 3200i and others in the same family). It brings them into Apple Home through the Philips/Versuni **cloud**, with the same MQTT protocol used by the official Air+ app and Google Home. No local connection, IP address or port forwarding is needed.
 
@@ -24,24 +24,24 @@ State changes arrive in real time over MQTT; a status poll runs every 120 s as a
 
 ## Install
 
-The plugin is not on npm; install it straight from this repository.
-
-On the Homebridge Raspberry Pi image or any `hb-service` install, open Homebridge UI → ⋮ → Terminal and run:
+Search for **Philips Air+ cloud** in Homebridge UI → Plugins and install it, or from a terminal:
 
 ```bash
+# Homebridge Raspberry Pi image / hb-service (Homebridge UI → ⋮ → Terminal)
 cd /var/lib/homebridge
-npm install git+https://github.com/Micheledipaola/homebridge-philips-airplus.git
+npm install homebridge-philips-airplus-cloud
+
+# global npm install of Homebridge
+sudo npm install -g homebridge-philips-airplus-cloud
 ```
 
-On a global npm install of Homebridge:
+Then restart Homebridge. Node 18.17 or newer and Homebridge 1.6+ (including 2.0 betas) are supported.
 
-```bash
-sudo npm install -g git+https://github.com/Micheledipaola/homebridge-philips-airplus.git
-```
+To try the latest unreleased code, install from GitHub instead: `npm install git+https://github.com/Micheledipaola/homebridge-philips-airplus.git`.
 
-Then restart Homebridge. Node 18.17 or newer and Homebridge 1.6+ (including 2.0 betas) are supported. To update, run the same command again; to remove it, `npm uninstall homebridge-philips-airplus`.
+Homebridge does not need to be on the same network as the purifier: everything goes through the Philips cloud.
 
-If Homebridge is not on the same network as the purifier that is fine: everything goes through the Philips cloud.
+> The npm package is called `homebridge-philips-airplus-cloud` because `homebridge-philips-airplus` is an unrelated plugin for Philips Air+ humidifiers.
 
 ## Log in
 
