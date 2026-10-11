@@ -63,6 +63,7 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 | `filterSensors` | `true` | Show filter and pre-filter status |
 | `sleepSwitch` | `true` | Show the Sleep mode switch |
 | `displayLight` | `true` | Show the display light |
+| `displayLightProperty` | — | Property key of the display light, if it is not detected (see the `Status properties reported by the device` log line) |
 | `filterChangeThreshold` | `10` | Filter life (%) at or below which HomeKit shows "replace filter" |
 | `pollInterval` | `120` | Seconds between safety-net status polls |
 

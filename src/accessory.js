@@ -29,6 +29,9 @@ const FALLBACK_MODEL = {
 // Display light properties in the Philips D03 family (see kongo09/philips-airpurifier-coap).
 const LIGHT_KEYS = ['D03105', 'D0312D'];
 
+// Bump to re-apply default service labels once on existing accessories.
+const NAMES_VERSION = 2;
+
 function pm25ToAirQuality(pm) {
   if (pm == null || Number.isNaN(pm)) return 0; // UNKNOWN
   if (pm <= 12) return 1; // EXCELLENT
@@ -137,13 +140,27 @@ class PurifierAccessory {
       .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version);
   }
 
-  _service(type, name, subtype) {
+  /**
+   * Get or create a service with a short, explicit label. Secondary services
+   * are linked to the purifier so the Home app shows them as labelled controls
+   * inside the purifier instead of as unnamed tiles.
+   */
+  _service(type, label, subtype, { link = true } = {}) {
+    const { Characteristic } = this.hap;
     const existing = subtype ? this.accessory.getServiceById(type, subtype) : this.accessory.getService(type);
-    if (existing) return existing;
-    const s = this.accessory.addService(type, name, subtype);
-    if (this.hap.Characteristic.ConfiguredName) {
-      if (!s.testCharacteristic(this.hap.Characteristic.ConfiguredName)) s.addOptionalCharacteristic(this.hap.Characteristic.ConfiguredName);
-      s.setCharacteristic(this.hap.Characteristic.ConfiguredName, name);
+    const s = existing || this.accessory.addService(type, label, subtype);
+    // Set the label on new services, and once on services created by older
+    // versions (which used long "<device> Sleep" names). Later user renames
+    // made in the Home app are kept.
+    if (!existing || (this.accessory.context.namesVersion || 0) < NAMES_VERSION) {
+      s.setCharacteristic(Characteristic.Name, label);
+      if (Characteristic.ConfiguredName) {
+        if (!s.testCharacteristic(Characteristic.ConfiguredName)) s.addOptionalCharacteristic(Characteristic.ConfiguredName);
+        s.setCharacteristic(Characteristic.ConfiguredName, label);
+      }
+    }
+    if (link && this.purifier && s !== this.purifier && !this.purifier.linkedServices.includes(s)) {
+      this.purifier.addLinkedService(s);
     }
     return s;
   }
@@ -159,7 +176,7 @@ class PurifierAccessory {
     const cfg = this.platform.config;
 
     // --- Air purifier
-    const p = this._service(Service.AirPurifier, name);
+    const p = this._service(Service.AirPurifier, name, undefined, { link: false });
     this.purifier = p;
     p.setPrimaryService(true);
     p.getCharacteristic(Characteristic.Active)
@@ -190,7 +207,7 @@ class PurifierAccessory {
 
     // --- Air quality
     if (this._prop('pm25') && cfg.airQualitySensor !== false) {
-      const aq = this._service(Service.AirQualitySensor, `${name} Air Quality`);
+      const aq = this._service(Service.AirQualitySensor, 'Air Quality');
       this.aq = aq;
       aq.getCharacteristic(Characteristic.AirQuality).onGet(() => pm25ToAirQuality(this._num('pm25')));
       aq.getCharacteristic(Characteristic.PM2_5Density).onGet(() => Math.min(1000, Math.max(0, this._num('pm25') ?? 0)));
@@ -203,8 +220,8 @@ class PurifierAccessory {
     // --- Filters
     this.filters = {};
     const filterDefs = [
-      { kind: 'replace', subtype: 'filter', label: `${name} Filter` },
-      { kind: 'clean', subtype: 'prefilter', label: `${name} Pre-filter` },
+      { kind: 'replace', subtype: 'filter', label: 'Filter' },
+      { kind: 'clean', subtype: 'prefilter', label: 'Pre-filter' },
     ];
     for (const f of filterDefs) {
       const enabled = this._prop(`filter_${f.kind}_remaining`) && cfg.filterSensors !== false;
@@ -224,7 +241,7 @@ class PurifierAccessory {
     // --- Sleep mode switch
     this.sleepModeName = Object.keys(this.model.modes || {}).find((m) => m.toLowerCase() === 'sleep');
     if (this.sleepModeName && cfg.sleepSwitch !== false) {
-      const s = this._service(Service.Switch, `${name} Sleep`, 'sleep');
+      const s = this._service(Service.Switch, 'Sleep', 'sleep');
       s.getCharacteristic(Characteristic.On)
         .onGet(() => this._isSleep())
         .onSet((v) => this._setSleep(!!v));
@@ -235,6 +252,11 @@ class PurifierAccessory {
     }
 
     this._setupLight();
+
+    if ((this.accessory.context.namesVersion || 0) < NAMES_VERSION) {
+      this.accessory.context.namesVersion = NAMES_VERSION;
+      this.platform.updateAccessory(this.accessory);
+    }
   }
 
   /** Display light: only exposed once the device has reported a light property. */
@@ -248,7 +270,7 @@ class PurifierAccessory {
       return;
     }
     if (this.light) return;
-    const s = this._service(Service.Lightbulb, `${this.accessory.displayName} Display`, 'display');
+    const s = this._service(Service.Lightbulb, 'Display', 'display');
     s.getCharacteristic(Characteristic.On)
       .onGet(() => this._lightOn())
       .onSet((v) => this._setLight(v ? null : 0));
@@ -260,6 +282,8 @@ class PurifierAccessory {
   }
 
   _lightKey() {
+    const fromConfig = this.platform.config.displayLightProperty;
+    if (fromConfig) return String(fromConfig).trim();
     const fromModel = this._prop('light_brightness');
     if (fromModel) return fromModel;
     if (this.accessory.context.lightKey) return this.accessory.context.lightKey;
@@ -478,6 +502,14 @@ class PurifierAccessory {
     if (!props || typeof props !== 'object' || !Object.keys(props).length) return;
 
     if (port === this.conn.ports.config) {
+      if (!this._loggedConfig) {
+        this._loggedConfig = true;
+        this.log.info(`Config properties reported by the device: ${JSON.stringify(props)}`);
+      }
+      if (LIGHT_KEYS.some((k) => props[k] !== undefined)) {
+        Object.assign(this.state, Object.fromEntries(LIGHT_KEYS.filter((k) => props[k] !== undefined).map((k) => [k, props[k]])));
+        this._learnLight(props);
+      }
       if (props.ctn && (!this.model || this.accessory.context.model !== props.ctn)) {
         this.log.info(`Device reports model ${props.ctn}`);
         this._applyModel(props.ctn);
@@ -503,7 +535,7 @@ class PurifierAccessory {
   _learnLight(props) {
     const ctx = this.accessory.context;
     let changed = false;
-    if (!this._prop('light_brightness') && !ctx.lightKey) {
+    if (!this.platform.config.displayLightProperty && !this._prop('light_brightness') && !ctx.lightKey) {
       const k = LIGHT_KEYS.find((x) => props[x] !== undefined);
       if (k) {
         ctx.lightKey = k;

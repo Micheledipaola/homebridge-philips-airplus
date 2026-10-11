@@ -209,3 +209,44 @@ test('display light: three-step scheme is learned from values above 100', async 
   c.deliver(status({ D03105: 115 }));
   assert.equal(l.getCharacteristic(Characteristic.Brightness).value, 50);
 });
+
+test('secondary services are linked to the purifier with short labels', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10');
+  t.after(() => dev.stop());
+  client().deliver(status({ D0310D: 2, D03105: 100 }));
+  const p = acc.getService(Service.AirPurifier);
+  const sw = acc.getServiceById(Service.Switch, 'sleep');
+  const light = acc.getServiceById(Service.Lightbulb, 'display');
+  for (const [svc, label] of [[sw, 'Sleep'], [light, 'Display'], [acc.getService(Service.AirQualitySensor), 'Air Quality'], [acc.getServiceById(Service.FilterMaintenance, 'filter'), 'Filter']]) {
+    assert.ok(p.linkedServices.includes(svc), label);
+    assert.equal(svc.getCharacteristic(Characteristic.Name).value, label);
+    assert.equal(svc.getCharacteristic(Characteristic.ConfiguredName).value, label);
+  }
+  assert.equal(p.isPrimaryService, true);
+});
+
+test('labels from older versions are migrated once, later renames are kept', async (t) => {
+  const { hap: h, FakeMqttClient: F, fakeAccount: fa, fakePlatform: fp, newAccessory: na, tick: tk } = require('./helpers');
+  const acc = na('Living Room', UUID, 'AC0651/10');
+  const old = acc.addService(h.Service.Switch, 'Living Room Sleep', 'sleep');
+  old.setCharacteristic(h.Characteristic.ConfiguredName, 'Living Room Sleep');
+  let dev = new PurifierAccessory(fp(), acc, { account: fa(), mqttConnect: (u, o) => new F(u, o) });
+  assert.equal(old.getCharacteristic(h.Characteristic.ConfiguredName).value, 'Sleep');
+  dev.stop();
+  old.setCharacteristic(h.Characteristic.ConfiguredName, 'Notte');
+  dev = new PurifierAccessory(fp(), acc, { account: fa(), mqttConnect: (u, o) => new F(u, o) });
+  t.after(() => dev.stop());
+  await tk();
+  assert.equal(old.getCharacteristic(h.Characteristic.ConfiguredName).value, 'Notte');
+});
+
+test('display light property can be set by hand', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10', { displayLightProperty: 'D03199' });
+  t.after(() => dev.stop());
+  const l = acc.getServiceById(Service.Lightbulb, 'display');
+  assert.ok(l, 'light exists before any report');
+  const c = client();
+  c.published.length = 0;
+  await l.getCharacteristic(Characteristic.Brightness).handleSetRequest(50);
+  assert.deepEqual(c.published[0].payload.data.properties, { D03199: 50 });
+});

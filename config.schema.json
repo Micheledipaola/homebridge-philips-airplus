@@ -16,7 +16,7 @@
       "email": {
         "title": "Philips account email",
         "type": "string",
-        "description": "For reference only \u2014 log in from the panel above."
+        "description": "For reference only — log in from the panel above."
       },
       "refreshToken": {
         "title": "Refresh token",
@@ -77,6 +77,12 @@
         "default": true,
         "description": "Appears once the purifier reports its light setting."
       },
+      "displayLightProperty": {
+        "title": "Display light property (advanced)",
+        "type": "string",
+        "placeholder": "D03105",
+        "description": "Only if the light does not appear: the property key that holds the light setting, as shown in the log line 'Status properties reported by the device'."
+      },
       "filterChangeThreshold": {
         "title": "Filter change alert below (%)",
         "type": "integer",
@@ -129,6 +135,7 @@
         "filterSensors",
         "sleepSwitch",
         "displayLight",
+        "displayLightProperty",
         "filterChangeThreshold",
         "pollInterval"
       ]
