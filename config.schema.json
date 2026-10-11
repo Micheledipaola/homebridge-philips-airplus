@@ -134,12 +134,6 @@
         "type": "string",
         "placeholder": "e.g. 2",
         "description": "Only if the Home app refuses to move or rename the purifier: type any new value (e.g. 2, then 3 next time) and restart. Home will see the purifier as a new accessory; reassign its room and check your scenes afterwards."
-      },
-      "labelRefresh": {
-        "title": "Refresh component labels (advanced)",
-        "type": "string",
-        "placeholder": "e.g. 1",
-        "description": "If the Home app does not show the labels under the purifier's components, type any new value and restart: about 40 seconds after startup the plugin renames the components in two steps so Home picks the labels up. Names you set in the Home app are replaced by the default ones."
       }
     }
   },
@@ -185,8 +179,7 @@
         "filterChangeThreshold",
         "pollInterval",
         "logDeviceData",
-        "homekitIdentity",
-        "labelRefresh"
+        "homekitIdentity"
       ]
     }
   ]

@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.7 — 2026-10-11
+
+- Removed the `labelRefresh` option added in 0.3.5: it did not help, the missing labels were caused by linked components (fixed in 0.3.6). A leftover `labelRefresh` value in the config is simply ignored.
+
 ## 0.3.6 — 2026-10-11
 
 - Components (Sleep, Air Quality, Filter, Pre-filter, Display) are no longer linked to the purifier by default. The Home app draws linked components as controls of the purifier without their names; unlinked ones get their own labelled tile in the purifier's combined view. Existing links are removed on startup. Set `linkComponents: true` to link them again.
