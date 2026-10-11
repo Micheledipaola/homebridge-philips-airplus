@@ -211,8 +211,8 @@ test('display light: three-step scheme is learned from values above 100', async 
   assert.equal(l.getCharacteristic(Characteristic.Brightness).value, 50);
 });
 
-test('secondary services are linked to the purifier with short labels', async (t) => {
-  const { dev, acc, client } = await setup('AC0651/10');
+test('with linkComponents, secondary services are linked with short labels', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10', { linkComponents: true });
   t.after(() => dev.stop());
   client().deliver(status({ D0310D: 2, D03105: 100 }));
   const p = acc.getService(Service.AirPurifier);
@@ -289,7 +289,7 @@ test('Sleep can be shown as a second air purifier service', async (t) => {
   assert.ok(sleep && main && sleep !== main);
   assert.equal(acc.getServiceById(Service.Switch, 'sleep'), undefined);
   assert.equal(main.isPrimaryService, true);
-  assert.ok(main.linkedServices.includes(sleep));
+  assert.equal(main.linkedServices.includes(sleep), false); // not linked by default
   assert.equal(sleep.getCharacteristic(Characteristic.Active).value, 0);
   c.published.length = 0;
   await sleep.getCharacteristic(Characteristic.Active).handleSetRequest(1);
@@ -381,4 +381,19 @@ test('labelRefresh renames components long then short, once per value', async (t
   t.mock.timers.tick(40000);
   assert.deepEqual(seen, ['Camera Air Quality', 'Air Quality']);
   dev2.stop();
+});
+
+test('components are not linked by default, and existing links are removed', async (t) => {
+  const { hap: h, FakeMqttClient: F, fakeAccount: fa, fakePlatform: fp, newAccessory: na } = require('./helpers');
+  const acc = na('Camera', UUID, 'AC0651/10');
+  // accessory as created by 0.3.x: components linked
+  let dev = new PurifierAccessory(fp({ linkComponents: true }), acc, { account: fa(), mqttConnect: (u, o) => new F(u, o) });
+  const main = () => acc.services.find((x) => x.UUID === h.Service.AirPurifier.UUID && !x.subtype);
+  assert.ok(main().linkedServices.length >= 3);
+  dev.stop();
+  dev = new PurifierAccessory(fp(), acc, { account: fa(), mqttConnect: (u, o) => new F(u, o) });
+  t.after(() => dev.stop());
+  assert.deepEqual(main().linkedServices, []);
+  // labels are still set
+  assert.equal(acc.getServiceById(h.Service.Switch, 'sleep').getCharacteristic(h.Characteristic.ConfiguredName).value, 'Sleep');
 });

@@ -238,8 +238,14 @@ class PurifierAccessory {
         s.setCharacteristic(Characteristic.ConfiguredName, label);
       }
     }
-    if (link && this.purifier && s !== this.purifier && !this.purifier.linkedServices.includes(s)) {
-      this.purifier.addLinkedService(s);
+    // linkComponents (default off): linked components are drawn by the Home
+    // app as controls of the purifier, without their names; unlinked ones get
+    // their own labelled tile in the purifier's combined view.
+    if (this.purifier && s !== this.purifier) {
+      const linked = this.purifier.linkedServices.includes(s);
+      const want = link && this.platform.config.linkComponents === true;
+      if (want && !linked) this.purifier.addLinkedService(s);
+      if (!want && linked) this.purifier.removeLinkedService(s);
     }
     return s;
   }

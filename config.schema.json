@@ -91,6 +91,12 @@
         ],
         "description": "'Air purifier' shows Sleep with the purifier icon in the Home app; it only turns Sleep mode on and off."
       },
+      "linkComponents": {
+        "title": "Link components to the purifier",
+        "type": "boolean",
+        "default": false,
+        "description": "Off (default): Sleep, air quality and filters get their own labelled tile in the purifier's combined view. On: the Home app shows them as controls inside the purifier, without labels."
+      },
       "displayLight": {
         "title": "Show the display light as a dimmable light",
         "type": "boolean",
@@ -173,6 +179,7 @@
         "filterSensors",
         "sleepSwitch",
         "sleepSwitchStyle",
+        "linkComponents",
         "displayLight",
         "displayLightProperty",
         "filterChangeThreshold",
