@@ -329,3 +329,25 @@ test('unknown cached model waits for the device instead of the fallback', async 
   t.after(() => dev.stop());
   assert.equal(dev.model, null);
 });
+
+test('watchdog reconnects when the device goes silent', async (t) => {
+  const { dev, client } = await setup('AC0651/10', { pollInterval: 30 });
+  t.after(() => dev.stop());
+  let reconnects = 0;
+  dev.conn.reconnect = () => { reconnects++; };
+  dev.conn.lastMessageAt = Date.now() - 7 * 60 * 1000;
+  // run one poll tick by hand
+  dev.start = PurifierAccessory.prototype.start;
+  const realSetInterval = global.setInterval;
+  let tickFn;
+  global.setInterval = (fn) => { if (!tickFn) tickFn = fn; return 0; };
+  try { dev.start(); } finally { global.setInterval = realSetInterval; }
+  await tickFn();
+  assert.equal(reconnects, 1);
+  // fresh data: no reconnect, a status request instead
+  client().published.length = 0;
+  dev.conn.lastMessageAt = Date.now();
+  await tickFn();
+  assert.equal(reconnects, 1);
+  assert.ok(client().published.some((p) => p.payload.cn === 'getPort' && p.payload.data.portName === 'Status'));
+});

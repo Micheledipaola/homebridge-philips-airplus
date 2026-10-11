@@ -91,9 +91,28 @@ class PurifierAccessory {
   start() {
     this.conn.start();
     const pollS = Math.max(30, Number(this.platform.config.pollInterval) || C.STATUS_POLL_INTERVAL_S);
+    // Watchdog: the cloud connection can stay open but stop delivering data.
+    // Every poll asks the device for its status, so if nothing has arrived for
+    // three polls (at least 6 minutes) the connection is rebuilt.
+    const silenceMs = Math.max(3 * pollS, 360) * 1000;
     this.pollTimer = setInterval(async () => {
       await this.conn.refreshIfNeeded();
-      if (this.conn.connected) this.conn.getPort(this.conn.ports.status);
+      if (!this.conn.connected) return;
+      const silent = Date.now() - this.conn.lastMessageAt;
+      if (silent > silenceMs) {
+        // Warn once; if the purifier is simply unplugged keep retrying quietly.
+        const msg = `No data from the purifier for ${Math.round(silent / 60000)} min; reconnecting to the Philips cloud`;
+        if (this._silenceWarned) this.log.debug(msg);
+        else this.log.warn(msg);
+        this._silenceWarned = true;
+        this.conn.reconnect();
+        return;
+      }
+      if (this._silenceWarned) {
+        this._silenceWarned = false;
+        this.log.info('Receiving data from the purifier again');
+      }
+      this.conn.getPort(this.conn.ports.status);
     }, pollS * 1000);
     this.filterTimer = setInterval(() => {
       if (this.conn.connected) this.conn.getPort(this.conn.ports.filter_read);
@@ -125,6 +144,11 @@ class PurifierAccessory {
     this._setInfo();
     this._pushAll();
     this.log.info(`Using model profile "${this.model.name}" (${this.speeds.length} manual speeds${this.hasAuto ? ' + Auto' : ''})`);
+    if (this.onModelReady) {
+      const cb = this.onModelReady;
+      this.onModelReady = null;
+      cb();
+    }
   }
 
   _prop(name) {

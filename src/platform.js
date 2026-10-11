@@ -72,17 +72,27 @@ class PhilipsAirPlusPlatform {
       const hbUuid = this.api.hap.uuid.generate(`${C.PLATFORM_NAME}:${dev.uuid}${identity ? `:${identity}` : ''}`);
       keep.add(hbUuid);
       let acc = this.cached.get(hbUuid);
-      if (!acc) {
+      const isNew = !acc;
+      if (isNew) {
         acc = new this.api.platformAccessory(dev.name, hbUuid, this.api.hap.Categories.AIR_PURIFIER);
         acc.context.uuid = dev.uuid;
         if (dev.model) acc.context.model = dev.model;
-        this.log.info(`Adding ${dev.name}`);
-        this.api.registerPlatformAccessories(C.PLUGIN_NAME, C.PLATFORM_NAME, [acc]);
       } else if (!acc.context.model && dev.model) {
         acc.context.model = dev.model;
       }
       const handler = new PurifierAccessory(this, acc, { account: this.account });
       this.handlers.set(hbUuid, handler);
+      if (isNew) {
+        // Announce a new accessory to HomeKit only once all its services exist:
+        // the Home app records names and links when it first sees an accessory,
+        // and services added to an already published accessory may show unlabelled.
+        const register = () => {
+          this.log.info(`Adding ${dev.name}`);
+          this.api.registerPlatformAccessories(C.PLUGIN_NAME, C.PLATFORM_NAME, [acc]);
+        };
+        if (handler.model) register();
+        else handler.onModelReady = register;
+      }
       handler.conn.on('authExpired', () => this._authExpired());
       handler.start();
     }

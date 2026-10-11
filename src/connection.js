@@ -70,6 +70,16 @@ class DeviceConnection extends EventEmitter {
     this.attempt = 0;
     this.timer = null;
     this.ports = { ...C.DEFAULT_PORTS };
+    this.lastMessageAt = Date.now();
+  }
+
+  /** Drop the current connection and connect again with fresh credentials. */
+  reconnect() {
+    if (this.stopped) return;
+    this.connected = false;
+    this.attempt = 0;
+    clearTimeout(this.timer);
+    this._connect();
   }
 
   setPorts(ports) {
@@ -161,12 +171,15 @@ class DeviceConnection extends EventEmitter {
       if (client !== this.client) return;
       this.connected = true;
       this.attempt = 0;
+      this.lastMessageAt = Date.now();
       client.subscribe(C.TOPIC_STATUS(this.deviceId), { qos: 0 });
       this.log.info('Connected to Philips cloud');
       this.emit('connected');
     });
 
     client.on('message', (topic, payload) => {
+      if (client !== this.client) return;
+      this.lastMessageAt = Date.now();
       let messages;
       try {
         messages = parseConcatenatedJson(payload.toString('utf8'));

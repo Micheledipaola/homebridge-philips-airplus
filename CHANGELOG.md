@@ -2,6 +2,11 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.3 — 2026-10-11
+
+- Fix: the plugin could stop updating when the cloud connection stayed open but stopped delivering data. If the purifier sends nothing for three status polls (at least 6 minutes), the connection is now rebuilt.
+- Fix: a new accessory is announced to HomeKit only once all its services exist, so the Home app sees the labelled, linked components from the start.
+
 ## 0.3.2 — 2026-10-11
 
 - Option `homekitIdentity`: gives the purifier a new HomeKit identity when the Home app keeps a stuck record of it (rooms and names cannot be changed). The previous accessory is removed automatically.
