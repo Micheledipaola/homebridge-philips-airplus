@@ -5,6 +5,14 @@
   "description": "Homebridge plugin for Philips Air+ / PureProtect air purifiers via the Philips (Versuni) cloud — the same MQTT protocol used by the Air+ app and Google Home.",
   "main": "src/index.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Micheledipaola/philips-air-plus-homeassistant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Micheledipaola/philips-air-plus-homeassistant/issues"
+  },
+  "homepage": "https://github.com/Micheledipaola/philips-air-plus-homeassistant#homebridge",
   "keywords": [
     "homebridge-plugin",
     "philips",
@@ -28,6 +36,7 @@
     "config.schema.json",
     "custom_components/philips_airplus/models.yaml",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {

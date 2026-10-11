@@ -18,13 +18,24 @@ State changes arrive in real time over MQTT; a status poll runs every 120 s as a
 
 ### Install
 
-The plugin is not on npm. Install it from this repository (Homebridge UI → Terminal, or a shell on the Homebridge host):
+The plugin is not on npm; install it straight from this repository.
+
+On the Homebridge Raspberry Pi image or any `hb-service` install, open Homebridge UI → ⋮ → Terminal and run:
 
 ```bash
-sudo npm install -g git+https://github.com/<your-account>/philips-air-plus-homeassistant.git
+cd /var/lib/homebridge
+npm install git+https://github.com/Micheledipaola/philips-air-plus-homeassistant.git
 ```
 
-Then restart Homebridge. Node 18.17 or newer and Homebridge 1.6+ (including 2.0 betas) are supported.
+On a global npm install of Homebridge:
+
+```bash
+sudo npm install -g git+https://github.com/Micheledipaola/philips-air-plus-homeassistant.git
+```
+
+Then restart Homebridge. Node 18.17 or newer and Homebridge 1.6+ (including 2.0 betas) are supported. To update, run the same command again; to remove it, `npm uninstall homebridge-philips-airplus`.
+
+If Homebridge is not on the same network as the purifier that is fine: everything goes through the Philips cloud.
 
 ### Log in
 
@@ -75,6 +86,8 @@ Each client uses its own MQTT client id (`…_hb` for Homebridge, `…_ha` for H
 
 ### Notes
 
+- Tested on an AC0651/10. The other models in `models.yaml` use the same protocol but have not been tried with Homebridge yet — reports are welcome.
+- The AC0651/10 does not expose its display brightness through the cloud (the Philips app has no control for it either; the display turns off by itself in Sleep), so no Display control appears for it.
 - Models not in `models.yaml` still get on/off, PM2.5 and filters, and a warning in the log; modes need a `models.yaml` entry.
 - The AC3221 (PureProtect 3200i) mapping is unverified (see below), and so is its speed order in HomeKit.
 - `npm test` runs the plugin tests (protocol, HomeKit mapping, login flow with a mocked cloud).
