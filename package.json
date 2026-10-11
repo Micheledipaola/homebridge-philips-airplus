@@ -7,12 +7,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Micheledipaola/philips-air-plus-homeassistant.git"
+    "url": "git+https://github.com/Micheledipaola/homebridge-philips-airplus.git"
   },
   "bugs": {
-    "url": "https://github.com/Micheledipaola/philips-air-plus-homeassistant/issues"
+    "url": "https://github.com/Micheledipaola/homebridge-philips-airplus/issues"
   },
-  "homepage": "https://github.com/Micheledipaola/philips-air-plus-homeassistant#homebridge",
+  "homepage": "https://github.com/Micheledipaola/homebridge-philips-airplus#readme",
   "keywords": [
     "homebridge-plugin",
     "philips",
