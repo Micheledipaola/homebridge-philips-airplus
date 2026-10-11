@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.2 — 2026-10-11
+
+- Option `homekitIdentity`: gives the purifier a new HomeKit identity when the Home app keeps a stuck record of it (rooms and names cannot be changed). The previous accessory is removed automatically.
+
 ## 0.3.1 — 2026-10-11
 
 - Fix: on a fresh install the purifier started with the reduced profile ("Model AC0651 is not in models.yaml") because the cloud device list gives the model without its `/10` suffix. The short code now matches its `models.yaml` entry, and an unknown code waits for the exact one reported by the device.

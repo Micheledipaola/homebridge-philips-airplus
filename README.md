@@ -83,6 +83,7 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 | `displayLight` | `true` | Show the display light |
 | `displayLightProperty` | — | Property key of the display light, if it is not detected (see the `Status properties reported by the device` log line) |
 | `logDeviceData` | `false` | Diagnostics: at startup, log every port and the cloud shadow the purifier publishes |
+| `homekitIdentity` | — | Change to any new value to give the purifier a new HomeKit identity (use only if the Home app refuses to move or rename it; reassign the room afterwards) |
 | `filterChangeThreshold` | `10` | Filter life (%) at or below which HomeKit shows "replace filter" |
 | `pollInterval` | `120` | Seconds between safety-net status polls |
 

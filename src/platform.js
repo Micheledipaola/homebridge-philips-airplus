@@ -66,7 +66,10 @@ class PhilipsAirPlusPlatform {
 
     const keep = new Set();
     for (const dev of wanted) {
-      const hbUuid = this.api.hap.uuid.generate(`${C.PLATFORM_NAME}:${dev.uuid}`);
+      // homekitIdentity: changing it gives the accessory a brand-new HomeKit
+      // identity, for when the Home app has a stuck record of the old one.
+      const identity = String(this.config.homekitIdentity || '').trim();
+      const hbUuid = this.api.hap.uuid.generate(`${C.PLATFORM_NAME}:${dev.uuid}${identity ? `:${identity}` : ''}`);
       keep.add(hbUuid);
       let acc = this.cached.get(hbUuid);
       if (!acc) {

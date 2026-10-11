@@ -122,6 +122,12 @@
         "type": "boolean",
         "default": false,
         "description": "At startup, ask the purifier for all its ports and cloud shadow and write them to the log. Turn off again afterwards."
+      },
+      "homekitIdentity": {
+        "title": "HomeKit identity (advanced)",
+        "type": "string",
+        "placeholder": "e.g. 2",
+        "description": "Only if the Home app refuses to move or rename the purifier: type any new value (e.g. 2, then 3 next time) and restart. Home will see the purifier as a new accessory; reassign its room and check your scenes afterwards."
       }
     }
   },
@@ -165,7 +171,8 @@
         "displayLightProperty",
         "filterChangeThreshold",
         "pollInterval",
-        "logDeviceData"
+        "logDeviceData",
+        "homekitIdentity"
       ]
     }
   ]
