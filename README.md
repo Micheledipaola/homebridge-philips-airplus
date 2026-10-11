@@ -18,6 +18,7 @@ One accessory per purifier with:
 - **Sleep switch** — turns Sleep mode on; turning it off returns to Auto.
 - **Display light** — the purifier's display/LED as a dimmable light. It appears after the purifier first reports its light setting (property `D03104`, `D03105` or `D0312D`); devices with three light levels are detected automatically.
 - **Air Quality Sensor** — PM2.5 (µg/m³) and a HomeKit air-quality level derived from it.
+- **Allergens** — on models that report the Philips allergen index (1–12): a second air quality sensor whose level follows the index (1 Excellent, 2–3 Good, 4–6 Fair, 7–9 Inferior, 10–12 Poor). HomeKit has no allergen or pollen reading of its own.
 - **Filter Maintenance** — main filter and pre-filter (cleaning), with life level, change alert (below 10% by default) and reset from the Home app. The reset writes the same value the official app does.
 
 State changes arrive in real time over MQTT; a status poll runs every 120 s as a safety net.
@@ -77,6 +78,7 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 |---|---|---|
 | `devices` | all | `[{ "uuid": "…", "name": "…", "model": "AC0651/10" }]` — pick/rename devices; `model` is only needed if auto-detection fails |
 | `airQualitySensor` | `true` | Show the PM2.5 sensor |
+| `allergenSensor` | `true` | Show the allergen index as a second air quality sensor (models that report it) |
 | `filterSensors` | `true` | Show filter and pre-filter status |
 | `sleepSwitch` | `true` | Show the Sleep mode switch |
 | `sleepSwitchStyle` | `switch` | `purifier` shows the Sleep control as a second air purifier (purifier icon in Home) that only turns Sleep on/off |

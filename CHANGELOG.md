@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.9 — 2026-10-11
+
+- New **Allergens** sensor on models that report the Philips allergen index (AC0651/10, AC1715/11, AC3221). HomeKit has no allergen reading, so the index (1–12) is shown as a second air quality sensor: 1 Excellent, 2–3 Good, 4–6 Fair, 7–9 Inferior, 10–12 Poor. Option `allergenSensor` (default on).
+
 ## 0.3.8 — 2026-10-11
 
 - Homebridge verification: `supports-hap` keyword; config schema uses object-level `required` arrays instead of per-field `required: true`. No functional changes.

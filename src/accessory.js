@@ -35,6 +35,19 @@ const LIGHT_KEYS = ['D03104', 'D03105', 'D0312D'];
 // Bump to re-apply default service labels once on existing accessories.
 const NAMES_VERSION = 2;
 
+/**
+ * Philips allergen index (IAI, 1-12) to a HomeKit air quality level.
+ * Philips bands: 1-3 good, 4-6 fair, 7-9 poor, 10-12 very poor.
+ */
+function allergenToAirQuality(idx) {
+  if (idx == null || Number.isNaN(idx) || idx <= 0) return 0; // UNKNOWN
+  if (idx <= 1) return 1; // EXCELLENT
+  if (idx <= 3) return 2; // GOOD
+  if (idx <= 6) return 3; // FAIR
+  if (idx <= 9) return 4; // INFERIOR
+  return 5; // POOR
+}
+
 function pm25ToAirQuality(pm) {
   if (pm == null || Number.isNaN(pm)) return 0; // UNKNOWN
   if (pm <= 12) return 1; // EXCELLENT
@@ -212,7 +225,9 @@ class PurifierAccessory {
   }
 
   _remove(type, subtype) {
-    const s = subtype ? this.accessory.getServiceById(type, subtype) : this.accessory.getService(type);
+    const s = subtype
+      ? this.accessory.getServiceById(type, subtype)
+      : this.accessory.services.find((x) => x.UUID === type.UUID && !x.subtype);
     if (s) this.accessory.removeService(s);
   }
 
@@ -261,6 +276,18 @@ class PurifierAccessory {
     } else {
       this._remove(Service.AirQualitySensor);
       this.aq = null;
+    }
+
+    // --- Allergen index (HomeKit has no allergen characteristic: shown as
+    // a second air quality sensor whose level follows the Philips index)
+    if (this._prop('allergen_index') && cfg.allergenSensor !== false) {
+      const al = this._service(Service.AirQualitySensor, 'Allergens', 'allergen');
+      this.allergen = al;
+      al.getCharacteristic(Characteristic.AirQuality).onGet(() => allergenToAirQuality(this._num('allergen_index')));
+      al.getCharacteristic(Characteristic.StatusActive).onGet(() => this.conn.connected);
+    } else {
+      this._remove(Service.AirQualitySensor, 'allergen');
+      this.allergen = null;
     }
 
     // --- Filters
@@ -669,6 +696,11 @@ class PurifierAccessory {
       }
       this.aq.updateCharacteristic(Characteristic.StatusActive, this.conn.connected);
     }
+    if (this.allergen) {
+      const idx = this._num('allergen_index');
+      if (idx !== null) this.allergen.updateCharacteristic(Characteristic.AirQuality, allergenToAirQuality(idx));
+      this.allergen.updateCharacteristic(Characteristic.StatusActive, this.conn.connected);
+    }
     if (this.sleepSwitch) this.sleepSwitch.updateCharacteristic(Characteristic.On, this._isSleep());
     if (this.sleepPurifier) {
       this.sleepPurifier.updateCharacteristic(Characteristic.Active, this._isSleep() ? 1 : 0);
@@ -687,4 +719,4 @@ class PurifierAccessory {
   }
 }
 
-module.exports = { PurifierAccessory, pm25ToAirQuality, FALLBACK_MODEL };
+module.exports = { PurifierAccessory, pm25ToAirQuality, allergenToAirQuality, FALLBACK_MODEL };

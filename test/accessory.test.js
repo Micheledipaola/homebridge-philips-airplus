@@ -155,7 +155,7 @@ test('commands fail with a HomeKit "no response" when offline', async (t) => {
 });
 
 test('options can hide the extra services', async (t) => {
-  const { dev, acc } = await setup('AC0651/10', { airQualitySensor: false, filterSensors: false });
+  const { dev, acc } = await setup('AC0651/10', { airQualitySensor: false, allergenSensor: false, filterSensors: false });
   t.after(() => dev.stop());
   assert.equal(acc.getService(Service.AirQualitySensor), undefined);
   assert.equal(acc.getService(Service.FilterMaintenance), undefined);
@@ -365,4 +365,30 @@ test('components are not linked by default, and existing links are removed', asy
   assert.deepEqual(main().linkedServices, []);
   // labels are still set
   assert.equal(acc.getServiceById(h.Service.Switch, 'sleep').getCharacteristic(h.Characteristic.ConfiguredName).value, 'Sleep');
+});
+
+test('allergen index is shown as a second air quality sensor', async (t) => {
+  const { allergenToAirQuality } = require('../src/accessory');
+  const { dev, acc, client } = await setup('AC0651/10');
+  t.after(() => dev.stop());
+  const al = acc.getServiceById(Service.AirQualitySensor, 'allergen');
+  const pm = acc.services.find((x) => x.UUID === Service.AirQualitySensor.UUID && !x.subtype);
+  assert.ok(al && pm && al !== pm);
+  assert.equal(al.getCharacteristic(Characteristic.ConfiguredName).value, 'Allergens');
+  client().deliver(status({ D03120: 3, D03221: 40 }));
+  assert.equal(al.getCharacteristic(Characteristic.AirQuality).value, 2); // GOOD
+  assert.equal(pm.getCharacteristic(Characteristic.AirQuality).value, 3); // PM2.5 40 -> FAIR
+  client().deliver(status({ D03120: 8 }));
+  assert.equal(al.getCharacteristic(Characteristic.AirQuality).value, 4);
+  assert.deepEqual([1, 2, 3, 4, 6, 7, 9, 10, 12].map(allergenToAirQuality), [1, 2, 2, 3, 3, 4, 4, 5, 5]);
+});
+
+test('no allergen sensor on models without the index, or when disabled', async (t) => {
+  const a = await setup('AC0650/10');
+  t.after(() => a.dev.stop());
+  assert.equal(a.acc.getServiceById(Service.AirQualitySensor, 'allergen'), undefined);
+  const b = await setup('AC0651/10', { allergenSensor: false });
+  t.after(() => b.dev.stop());
+  assert.equal(b.acc.getServiceById(Service.AirQualitySensor, 'allergen'), undefined);
+  assert.ok(b.acc.services.find((x) => x.UUID === Service.AirQualitySensor.UUID && !x.subtype));
 });
