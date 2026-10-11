@@ -10,7 +10,7 @@ One accessory per purifier with:
 
 - **Air Purifier** — on/off, Auto/Manual, and a speed slider split into one band per manual mode of your model (e.g. 0–33% Sleep, 34–66% Medium, 67–100% Turbo on the AC0651/10); it snaps to the band after each change. Switching back to Manual restores the last manual speed.
 - **Sleep switch** — turns Sleep mode on; turning it off returns to Auto.
-- **Display light** — the purifier's display/LED as a dimmable light. It appears after the purifier first reports its light setting (property `D03105` or `D0312D`); devices with three light levels are detected automatically.
+- **Display light** — the purifier's display/LED as a dimmable light. It appears after the purifier first reports its light setting (property `D03104`, `D03105` or `D0312D`); devices with three light levels are detected automatically.
 - **Air Quality Sensor** — PM2.5 (µg/m³) and a HomeKit air-quality level derived from it.
 - **Filter Maintenance** — main filter and pre-filter (cleaning), with life level, change alert (below 10% by default) and reset from the Home app. The reset writes the same value the official app does.
 

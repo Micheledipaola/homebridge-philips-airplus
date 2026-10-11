@@ -250,3 +250,16 @@ test('display light property can be set by hand', async (t) => {
   await l.getCharacteristic(Characteristic.Brightness).handleSetRequest(50);
   assert.deepEqual(c.published[0].payload.data.properties, { D03199: 50 });
 });
+
+test('display light on D03104 with the 0/115/123 scheme', async (t) => {
+  const { dev, acc, client } = await setup('AC0650/10');
+  t.after(() => dev.stop());
+  const c = client();
+  c.deliver(status({ D0310D: 2, D03104: 115 }));
+  const l = acc.getServiceById(Service.Lightbulb, 'display');
+  assert.ok(l);
+  assert.equal(l.getCharacteristic(Characteristic.Brightness).value, 50);
+  c.published.length = 0;
+  await l.getCharacteristic(Characteristic.Brightness).handleSetRequest(90);
+  assert.deepEqual(c.published[0].payload.data.properties, { D03104: 123 });
+});

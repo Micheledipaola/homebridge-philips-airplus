@@ -26,8 +26,11 @@ const FALLBACK_MODEL = {
   },
 };
 
-// Display light properties in the Philips D03 family (see kongo09/philips-airpurifier-coap).
-const LIGHT_KEYS = ['D03105', 'D0312D'];
+// Display light properties in the Philips D03 family: D03104 is what
+// homebridge-philips-air-purifier-complete sends to Air+ cloud devices other
+// than the AC1715 (0/115/123); D03105 and D0312D come from
+// kongo09/philips-airpurifier-coap.
+const LIGHT_KEYS = ['D03104', 'D03105', 'D0312D'];
 
 // Bump to re-apply default service labels once on existing accessories.
 const NAMES_VERSION = 2;
