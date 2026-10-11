@@ -37,7 +37,14 @@ class PhilipsAirPlusPlatform {
     this.cached.set(accessory.UUID, accessory);
   }
 
+  /**
+   * Persist context changes. Only for accessories Homebridge already knows:
+   * updating one that is not registered yet adds it to Homebridge's cache,
+   * and the registration that follows is then rejected as a duplicate
+   * (Homebridge 2.x), leaving the accessory out of HomeKit.
+   */
   updateAccessory(accessory) {
+    if (!this.cached.has(accessory.UUID)) return;
     this.api.updatePlatformAccessories([accessory]);
   }
 
@@ -89,6 +96,7 @@ class PhilipsAirPlusPlatform {
         const register = () => {
           this.log.info(`Adding ${dev.name}`);
           this.api.registerPlatformAccessories(C.PLUGIN_NAME, C.PLATFORM_NAME, [acc]);
+          this.cached.set(acc.UUID, acc);
         };
         if (handler.model) register();
         else handler.onModelReady = register;
@@ -103,6 +111,7 @@ class PhilipsAirPlusPlatform {
       if (stale.length) {
         this.log.info(`Removing ${stale.map((a) => a.displayName).join(', ')}`);
         this.api.unregisterPlatformAccessories(C.PLUGIN_NAME, C.PLATFORM_NAME, stale);
+        for (const a of stale) this.cached.delete(a.UUID);
       }
     }
   }

@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.4 — 2026-10-11
+
+- Fix (0.3.3 regression): on Homebridge 2.x a newly created accessory could be left out of HomeKit ("has the same UUID as existing accessory … Skipping duplicate"), because its settings were saved before it was registered. Accessories are now only updated after registration.
+
 ## 0.3.3 — 2026-10-11
 
 - Fix: the plugin could stop updating when the cloud connection stayed open but stopped delivering data. If the purifier sends nothing for three status polls (at least 6 minutes), the connection is now rebuilt.
