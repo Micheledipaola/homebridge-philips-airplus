@@ -10,8 +10,7 @@
       "name": {
         "title": "Name",
         "type": "string",
-        "default": "Philips Air+",
-        "required": true
+        "default": "Philips Air+"
       },
       "email": {
         "title": "Philips account email",
@@ -41,8 +40,7 @@
           "properties": {
             "uuid": {
               "title": "Device UUID",
-              "type": "string",
-              "required": true
+              "type": "string"
             },
             "name": {
               "title": "Name in HomeKit",
@@ -53,7 +51,10 @@
               "type": "string",
               "description": "e.g. AC0651/10. Normally detected automatically."
             }
-          }
+          },
+          "required": [
+            "uuid"
+          ]
         }
       },
       "airQualitySensor": {
@@ -135,7 +136,10 @@
         "placeholder": "e.g. 2",
         "description": "Only if the Home app refuses to move or rename the purifier: type any new value (e.g. 2, then 3 next time) and restart. Home will see the purifier as a new accessory; reassign its room and check your scenes afterwards."
       }
-    }
+    },
+    "required": [
+      "name"
+    ]
   },
   "layout": [
     "name",

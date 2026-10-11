@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.8 — 2026-10-11
+
+- Homebridge verification: `supports-hap` keyword; config schema uses object-level `required` arrays instead of per-field `required: true`. No functional changes.
+
 ## 0.3.7 — 2026-10-11
 
 - Removed the `labelRefresh` option added in 0.3.5: it did not help, the missing labels were caused by linked components (fixed in 0.3.6). A leftover `labelRefresh` value in the config is simply ignored.
