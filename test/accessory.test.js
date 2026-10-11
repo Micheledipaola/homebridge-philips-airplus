@@ -351,3 +351,34 @@ test('watchdog reconnects when the device goes silent', async (t) => {
   assert.equal(reconnects, 1);
   assert.ok(client().published.some((p) => p.payload.cn === 'getPort' && p.payload.data.portName === 'Status'));
 });
+
+test('labelRefresh renames components long then short, once per value', async (t) => {
+  const { hap: h, FakeMqttClient: F, fakeAccount: fa, fakePlatform: fp, newAccessory: na } = require('./helpers');
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
+  const platform = fp({ labelRefresh: '1', sleepSwitchStyle: 'purifier' });
+  const acc = na('Camera', UUID, 'AC0651/10');
+  const dev = new PurifierAccessory(platform, acc, { account: fa(), mqttConnect: (u, o) => new F(u, o) });
+  t.after(() => dev.stop());
+  dev.start();
+  const aq = acc.getService(h.Service.AirQualitySensor);
+  const sleep = acc.getServiceById(h.Service.AirPurifier, 'sleep');
+  const main = acc.services.find((x) => x.UUID === h.Service.AirPurifier.UUID && !x.subtype);
+  const seen = [];
+  aq.getCharacteristic(h.Characteristic.ConfiguredName).on('change', (e) => seen.push(e.newValue));
+  t.mock.timers.tick(20000);
+  assert.equal(aq.getCharacteristic(h.Characteristic.ConfiguredName).value, 'Camera Air Quality');
+  assert.equal(sleep.getCharacteristic(h.Characteristic.Name).value, 'Camera Sleep');
+  assert.equal(main.getCharacteristic(h.Characteristic.ConfiguredName).value, 'Camera');
+  t.mock.timers.tick(20000);
+  assert.equal(aq.getCharacteristic(h.Characteristic.ConfiguredName).value, 'Air Quality');
+  assert.equal(sleep.getCharacteristic(h.Characteristic.ConfiguredName).value, 'Sleep');
+  assert.deepEqual(seen, ['Camera Air Quality', 'Air Quality']);
+  assert.equal(acc.context.labelRefresh, '1');
+  // same value again: nothing happens
+  dev.stop();
+  const dev2 = new PurifierAccessory(platform, acc, { account: fa(), mqttConnect: (u, o) => new F(u, o) });
+  dev2.start();
+  t.mock.timers.tick(40000);
+  assert.deepEqual(seen, ['Camera Air Quality', 'Air Quality']);
+  dev2.stop();
+});

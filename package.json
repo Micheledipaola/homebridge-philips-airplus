@@ -1,7 +1,7 @@
 {
   "name": "homebridge-philips-airplus-cloud",
   "displayName": "Philips Air+",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Homebridge plugin for Philips Air+ / PureProtect air purifiers via the Philips (Versuni) cloud — the same MQTT protocol used by the Air+ app and Google Home.",
   "main": "src/index.js",
   "license": "MIT",

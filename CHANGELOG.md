@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.5 — 2026-10-11
+
+- Option `labelRefresh`: if the Home app does not show the labels under the purifier's components in its combined view, set any new value and restart. About 40 s after startup the plugin renames the components in two steps (long name, then short label), replaying the rename that made Home show the labels before. Names set in the Home app are replaced by the defaults.
+
 ## 0.3.4 — 2026-10-11
 
 - Fix (0.3.3 regression): on Homebridge 2.x a newly created accessory could be left out of HomeKit ("has the same UUID as existing accessory … Skipping duplicate"), because its settings were saved before it was registered. Accessories are now only updated after registration.

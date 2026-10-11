@@ -90,6 +90,7 @@ class PurifierAccessory {
 
   start() {
     this.conn.start();
+    this._scheduleLabelRefresh();
     const pollS = Math.max(30, Number(this.platform.config.pollInterval) || C.STATUS_POLL_INTERVAL_S);
     // Watchdog: the cloud connection can stay open but stop delivering data.
     // Every poll asks the device for its status, so if nothing has arrived for
@@ -119,7 +120,44 @@ class PurifierAccessory {
     }, C.FILTER_POLL_INTERVAL_MS);
   }
 
+  /**
+   * labelRefresh: replays what made the Home app show labels under each
+   * component in the purifier's combined view — the plugin renaming the
+   * components while Home is connected (as the 0.2.1 update did, from
+   * "<purifier> Air Quality" to "Air Quality"). Runs once per new value.
+   * Names given in the Home app are replaced by the default labels.
+   */
+  _scheduleLabelRefresh() {
+    const want = String(this.platform.config.labelRefresh || '').trim();
+    if (!want || this.accessory.context.labelRefresh === want) return;
+    const { Characteristic } = this.hap;
+    const STEP_MS = 20000;
+    const targets = () => this.accessory.services.filter((x) => x.__label && x !== this.purifier);
+    const rename = (long) => {
+      for (const x of targets()) {
+        const name = long ? `${this.accessory.displayName} ${x.__label}` : x.__label;
+        x.updateCharacteristic(Characteristic.Name, name);
+        if (x.testCharacteristic(Characteristic.ConfiguredName)) x.updateCharacteristic(Characteristic.ConfiguredName, name);
+      }
+    };
+    this._labelTimers = [
+      setTimeout(() => {
+        if (!targets().length) return;
+        this.log.info('labelRefresh: renaming components in two steps so the Home app shows their labels');
+        rename(true);
+      }, STEP_MS),
+      setTimeout(() => {
+        if (!targets().length) return;
+        rename(false);
+        this.accessory.context.labelRefresh = want;
+        this.platform.updateAccessory(this.accessory);
+        this.log.info('labelRefresh: done');
+      }, 2 * STEP_MS),
+    ];
+  }
+
   stop() {
+    (this._labelTimers || []).forEach(clearTimeout);
     clearInterval(this.pollTimer);
     clearInterval(this.filterTimer);
     this.conn.stop();
@@ -189,6 +227,7 @@ class PurifierAccessory {
       ? this.accessory.getServiceById(type, subtype)
       : this.accessory.services.find((x) => x.UUID === type.UUID && !x.subtype);
     const s = existing || this.accessory.addService(type, label, subtype);
+    s.__label = label; // default label, used by labelRefresh (not persisted)
     // Set the label on new services, and once on services created by older
     // versions (which used long "<device> Sleep" names). Later user renames
     // made in the Home app are kept.
