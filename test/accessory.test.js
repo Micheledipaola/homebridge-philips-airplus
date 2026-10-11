@@ -136,8 +136,9 @@ test('model is learned from the Config port and cached', async (t) => {
 });
 
 test('unknown model still gets power, PM2.5 and filters', async (t) => {
-  const { dev, acc, client } = await setup('AC9999/10');
+  const { dev, acc, client } = await setup(undefined);
   t.after(() => dev.stop());
+  client().deliver({ cn: 'getPort', data: { portName: 'Config', properties: { ctn: 'AC9999/10' } } });
   client().deliver(status({ D0310D: 2, D03221: 20 }));
   const p = acc.getService(Service.AirPurifier);
   assert.equal(p.getCharacteristic(Characteristic.Active).value, 1);
@@ -300,4 +301,31 @@ test('Sleep can be shown as a second air purifier service', async (t) => {
   c.published.length = 0;
   await sleep.getCharacteristic(Characteristic.Active).handleSetRequest(0);
   assert.deepEqual(c.published.find((x) => x.payload.cn === 'setPort').payload.data.properties, { D0310C: 0 });
+});
+
+test('short cloud model code gets the full profile without a warning', async (t) => {
+  const warnings = [];
+  const { hap: h, FakeMqttClient: F, fakeAccount: fa, fakePlatform: fp, newAccessory: na, tick: tk } = require('./helpers');
+  const platform = fp();
+  platform.log = { ...platform.log, warn: (m) => warnings.push(m) };
+  const acc = na('Camera', UUID, 'AC0651');
+  let client;
+  const dev = new PurifierAccessory(platform, acc, { account: fa(), mqttConnect: (u, o) => (client = new F(u, o)) });
+  t.after(() => dev.stop());
+  assert.equal(dev.model.key, 'AC0651/10');
+  assert.equal(dev.speeds.length, 3);
+  dev.conn.start();
+  await tk(); await tk();
+  client.deliver({ cn: 'getPort', data: { portName: 'Config', properties: { ctn: 'AC0651/10' } } });
+  assert.equal(acc.context.model, 'AC0651/10');
+  assert.deepEqual(warnings, []);
+  assert.ok(acc.getService(h.Service.AirPurifier).testCharacteristic(h.Characteristic.RotationSpeed));
+});
+
+test('unknown cached model waits for the device instead of the fallback', async (t) => {
+  const { fakeAccount: fa, fakePlatform: fp, newAccessory: na, FakeMqttClient: F } = require('./helpers');
+  const acc = na('X', UUID, 'ZZ9999');
+  const dev = new PurifierAccessory(fp(), acc, { account: fa(), mqttConnect: (u, o) => new F(u, o) });
+  t.after(() => dev.stop());
+  assert.equal(dev.model, null);
 });

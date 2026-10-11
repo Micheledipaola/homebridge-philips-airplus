@@ -78,9 +78,12 @@ class PurifierAccessory {
     });
     this.conn.on('message', (m, topic) => this._onMessage(m, topic));
 
+    // The cached/cloud model code is only a hint: if it does not match a
+    // models.yaml entry, wait for the device to report its exact code on the
+    // Config port instead of starting with the reduced fallback profile.
     const known = accessory.context.model;
-    if (known) this._applyModel(known, false);
-    else this.log.info('Model not known yet; waiting for the device to report it');
+    if (known && findModel(known)) this._applyModel(known, false);
+    else this.log.info(`Model ${known ? `${known} ` : ''}not identified yet; waiting for the device to report it`);
 
     this._setInfo();
   }

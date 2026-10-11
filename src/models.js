@@ -24,14 +24,22 @@ function loadModels(file = MODELS_FILE) {
   return cache;
 }
 
-/** Exact match first, then prefix match (e.g. "AC3221/10" -> "AC3221"). */
+/**
+ * Exact match first, then prefix match either way:
+ *  - "AC3221/10" -> "AC3221"     (device reports a longer code than the yaml key)
+ *  - "AC0651"    -> "AC0651/10"  (the cloud device list omits the /xx suffix)
+ */
 function findModel(ctn) {
   if (!ctn) return null;
+  const code = String(ctn).trim().toUpperCase();
   const models = loadModels();
-  if (models[ctn]) return { key: ctn, ...models[ctn] };
-  for (const [key, cfg] of Object.entries(models)) {
-    if (String(ctn).startsWith(key)) return { key, ...cfg };
-  }
+  const entries = Object.entries(models);
+  const exact = entries.find(([key]) => key.toUpperCase() === code);
+  if (exact) return { key: exact[0], ...exact[1] };
+  const longer = entries.find(([key]) => code.startsWith(key.toUpperCase()));
+  if (longer) return { key: longer[0], ...longer[1] };
+  const base = entries.find(([key]) => key.toUpperCase().startsWith(`${code}/`));
+  if (base) return { key: base[0], ...base[1] };
   return null;
 }
 

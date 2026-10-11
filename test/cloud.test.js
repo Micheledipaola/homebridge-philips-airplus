@@ -112,3 +112,11 @@ test('models.yaml is shared with the HA integration', () => {
   assert.deepEqual(speedModes(findModel('AC1715/11')), ['Sleep', 'Medium', 'Fast', 'Turbo']);
   assert.deepEqual(speedModes(findModel('AC0650/10')), ['Sleep', 'Turbo']);
 });
+
+test('model lookup accepts the short code from the cloud device list', () => {
+  assert.equal(findModel('AC0651').key, 'AC0651/10');
+  assert.equal(findModel('ac0651/10').key, 'AC0651/10');
+  assert.match(findModel('AC1715').key, /^AC1715\//);
+  assert.equal(findModel('AC3221/10').key, 'AC3221');
+  assert.equal(findModel('AC06'), null);
+});
