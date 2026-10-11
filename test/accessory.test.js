@@ -277,3 +277,27 @@ test('logDeviceData asks for all ports and the shadow, then reads each port', as
   const asked = c.published.filter((p) => p.payload.cn === 'getPort').map((p) => p.payload.data.portName);
   assert.ok(asked.includes('Display'));
 });
+
+test('Sleep can be shown as a second air purifier service', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10', { sleepSwitchStyle: 'purifier' });
+  t.after(() => dev.stop());
+  const c = client();
+  c.deliver(status({ D0310D: 2, D0310C: 0 }));
+  const main = acc.services.find((s) => s.UUID === Service.AirPurifier.UUID && !s.subtype);
+  const sleep = acc.getServiceById(Service.AirPurifier, 'sleep');
+  assert.ok(sleep && main && sleep !== main);
+  assert.equal(acc.getServiceById(Service.Switch, 'sleep'), undefined);
+  assert.equal(main.isPrimaryService, true);
+  assert.ok(main.linkedServices.includes(sleep));
+  assert.equal(sleep.getCharacteristic(Characteristic.Active).value, 0);
+  c.published.length = 0;
+  await sleep.getCharacteristic(Characteristic.Active).handleSetRequest(1);
+  assert.deepEqual(c.published.find((x) => x.payload.cn === 'setPort').payload.data.properties, { D0310C: 17 });
+  c.deliver(status({ D0310C: 17 }));
+  assert.equal(sleep.getCharacteristic(Characteristic.Active).value, 1);
+  assert.equal(sleep.getCharacteristic(Characteristic.CurrentAirPurifierState).value, 2);
+  assert.equal(main.getCharacteristic(Characteristic.Active).value, 1);
+  c.published.length = 0;
+  await sleep.getCharacteristic(Characteristic.Active).handleSetRequest(0);
+  assert.deepEqual(c.published.find((x) => x.payload.cn === 'setPort').payload.data.properties, { D0310C: 0 });
+});

@@ -156,7 +156,11 @@ class PurifierAccessory {
    */
   _service(type, label, subtype, { link = true } = {}) {
     const { Characteristic } = this.hap;
-    const existing = subtype ? this.accessory.getServiceById(type, subtype) : this.accessory.getService(type);
+    // Without a subtype, match only the service that has none: the Sleep
+    // control can be a second AirPurifier service (subtype "sleep").
+    const existing = subtype
+      ? this.accessory.getServiceById(type, subtype)
+      : this.accessory.services.find((x) => x.UUID === type.UUID && !x.subtype);
     const s = existing || this.accessory.addService(type, label, subtype);
     // Set the label on new services, and once on services created by older
     // versions (which used long "<device> Sleep" names). Later user renames
@@ -249,15 +253,35 @@ class PurifierAccessory {
 
     // --- Sleep mode switch
     this.sleepModeName = Object.keys(this.model.modes || {}).find((m) => m.toLowerCase() === 'sleep');
-    if (this.sleepModeName && cfg.sleepSwitch !== false) {
+    // "switch": a plain switch. "purifier": a second Air Purifier service, so
+    // the Home app shows it with the purifier icon (it only turns Sleep on/off).
+    const sleepStyle = cfg.sleepSwitchStyle === 'purifier' ? 'purifier' : 'switch';
+    this.sleepSwitch = null;
+    this.sleepPurifier = null;
+    if (this.sleepModeName && cfg.sleepSwitch !== false && sleepStyle === 'switch') {
+      this._remove(Service.AirPurifier, 'sleep');
       const s = this._service(Service.Switch, 'Sleep', 'sleep');
       s.getCharacteristic(Characteristic.On)
         .onGet(() => this._isSleep())
         .onSet((v) => this._setSleep(!!v));
       this.sleepSwitch = s;
+    } else if (this.sleepModeName && cfg.sleepSwitch !== false) {
+      this._remove(Service.Switch, 'sleep');
+      const s = this._service(Service.AirPurifier, 'Sleep', 'sleep');
+      s.getCharacteristic(Characteristic.Active)
+        .onGet(() => (this._isSleep() ? 1 : 0))
+        .onSet((v) => this._setSleep(v === 1 || v === true));
+      s.getCharacteristic(Characteristic.CurrentAirPurifierState).onGet(() => (this._isSleep() ? 2 : 0));
+      // Sleep is a fixed manual setting: lock the Auto/Manual choice.
+      s.getCharacteristic(Characteristic.TargetAirPurifierState)
+        .setProps({ validValues: [0] })
+        .updateValue(0)
+        .onGet(() => 0)
+        .onSet(() => {});
+      this.sleepPurifier = s;
     } else {
       this._remove(Service.Switch, 'sleep');
-      this.sleepSwitch = null;
+      this._remove(Service.AirPurifier, 'sleep');
     }
 
     this._setupLight();
@@ -613,6 +637,10 @@ class PurifierAccessory {
       this.aq.updateCharacteristic(Characteristic.StatusActive, this.conn.connected);
     }
     if (this.sleepSwitch) this.sleepSwitch.updateCharacteristic(Characteristic.On, this._isSleep());
+    if (this.sleepPurifier) {
+      this.sleepPurifier.updateCharacteristic(Characteristic.Active, this._isSleep() ? 1 : 0);
+      this.sleepPurifier.updateCharacteristic(Characteristic.CurrentAirPurifierState, this._isSleep() ? 2 : 0);
+    }
     if (this.light && this._lightRaw() !== null) {
       this.light.updateCharacteristic(Characteristic.On, this._lightOn());
       if (this._lightOn()) this.light.updateCharacteristic(Characteristic.Brightness, this._lightBrightness());

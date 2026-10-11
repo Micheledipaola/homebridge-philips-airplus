@@ -62,6 +62,7 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 | `airQualitySensor` | `true` | Show the PM2.5 sensor |
 | `filterSensors` | `true` | Show filter and pre-filter status |
 | `sleepSwitch` | `true` | Show the Sleep mode switch |
+| `sleepSwitchStyle` | `switch` | `purifier` shows the Sleep control as a second air purifier (purifier icon in Home) that only turns Sleep on/off |
 | `displayLight` | `true` | Show the display light |
 | `displayLightProperty` | — | Property key of the display light, if it is not detected (see the `Status properties reported by the device` log line) |
 | `logDeviceData` | `false` | Diagnostics: at startup, log every port and the cloud shadow the purifier publishes |

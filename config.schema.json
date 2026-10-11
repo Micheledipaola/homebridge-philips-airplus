@@ -71,6 +71,26 @@
         "type": "boolean",
         "default": true
       },
+      "sleepSwitchStyle": {
+        "title": "Sleep control style",
+        "type": "string",
+        "default": "switch",
+        "oneOf": [
+          {
+            "title": "Switch",
+            "enum": [
+              "switch"
+            ]
+          },
+          {
+            "title": "Air purifier (purifier icon)",
+            "enum": [
+              "purifier"
+            ]
+          }
+        ],
+        "description": "'Air purifier' shows Sleep with the purifier icon in the Home app; it only turns Sleep mode on and off."
+      },
       "displayLight": {
         "title": "Show the display light as a dimmable light",
         "type": "boolean",
@@ -140,6 +160,7 @@
         "airQualitySensor",
         "filterSensors",
         "sleepSwitch",
+        "sleepSwitchStyle",
         "displayLight",
         "displayLightProperty",
         "filterChangeThreshold",
