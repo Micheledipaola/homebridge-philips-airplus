@@ -96,6 +96,12 @@
         "default": 120,
         "minimum": 30,
         "description": "The device also pushes changes in real time; this is only a safety net."
+      },
+      "logDeviceData": {
+        "title": "Log all device data (diagnostics)",
+        "type": "boolean",
+        "default": false,
+        "description": "At startup, ask the purifier for all its ports and cloud shadow and write them to the log. Turn off again afterwards."
       }
     }
   },
@@ -137,7 +143,8 @@
         "displayLight",
         "displayLightProperty",
         "filterChangeThreshold",
-        "pollInterval"
+        "pollInterval",
+        "logDeviceData"
       ]
     }
   ]

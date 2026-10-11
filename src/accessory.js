@@ -66,11 +66,17 @@ class PurifierAccessory {
     this.filterThreshold = platform.config.filterChangeThreshold ?? 10;
 
     this.conn = new DeviceConnection({ account, uuid: accessory.context.uuid, log: this.log, mqttConnect });
+    this.diag = !!platform.config.logDeviceData;
     this.conn.on('connected', () => {
       this.conn.requestAll();
       this.conn.shadowGet();
+      if (this.diag && !this._discovered) {
+        this._discovered = true;
+        this.log.info('logDeviceData is on: asking the device for all its ports and its cloud shadow');
+        setTimeout(() => this.conn.discover(), 1500);
+      }
     });
-    this.conn.on('message', (m) => this._onMessage(m));
+    this.conn.on('message', (m, topic) => this._onMessage(m, topic));
 
     const known = accessory.context.model;
     if (known) this._applyModel(known, false);
@@ -497,7 +503,8 @@ class PurifierAccessory {
 
   // ------------------------------------------------------------- inbound
 
-  _onMessage(m) {
+  _onMessage(m, topic = '') {
+    if (this.diag) this._logDiag(m, topic);
     const data = m && m.data;
     if (!data || Array.isArray(data) || typeof data !== 'object') return;
     const port = data.portName;
@@ -532,6 +539,34 @@ class PurifierAccessory {
       return;
     }
     this._pushAll();
+  }
+
+  _logDiag(m, topic) {
+    if (topic.includes('/shadow/')) {
+      this.log.info(`[diag] shadow ${topic.split('/shadow/')[1]}: ${JSON.stringify(m)}`);
+      return;
+    }
+    const data = m && m.data;
+    if (Array.isArray(data)) {
+      const ports = data.map((d) => d && d.portName).filter(Boolean);
+      this.log.info(`[diag] device ports: ${JSON.stringify(data)}`);
+      this._diagPorts = this._diagPorts || new Set();
+      for (const port of ports) {
+        if (this._diagPorts.has(port)) continue;
+        this._diagPorts.add(port);
+        setTimeout(() => this.conn.getPort(port), 200 * this._diagPorts.size);
+      }
+      return;
+    }
+    if (data && data.portName) {
+      const key = `${data.portName}:${JSON.stringify(data.properties)}`;
+      if (this._diagSeen === undefined) this._diagSeen = new Set();
+      if (this._diagSeen.has(key)) return;
+      this._diagSeen.add(key);
+      this.log.info(`[diag] port ${data.portName} (${m.cn}): ${JSON.stringify(data.properties)}`);
+    } else {
+      this.log.info(`[diag] message: ${JSON.stringify(m)}`);
+    }
   }
 
   /** Remember which light property the device uses and which value scheme. */

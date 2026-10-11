@@ -175,8 +175,8 @@ class DeviceConnection extends EventEmitter {
         return;
       }
       for (const m of messages) {
-        this.log.debug(`MQTT <- ${JSON.stringify(m)}`);
-        this.emit('message', m);
+        this.log.debug(`MQTT <- ${topic} ${JSON.stringify(m)}`);
+        this.emit('message', m, topic);
       }
     });
 
@@ -249,6 +249,26 @@ class DeviceConnection extends EventEmitter {
 
   shadowGet() {
     return this._publish(C.TOPIC_SHADOW_GET(this.deviceId), '{}');
+  }
+
+  /**
+   * Diagnostics: ask for the port list and the AWS IoT shadow, which may hold
+   * settings the Status port does not report. Only used when logDeviceData is on,
+   * because subscribing to shadow topics is outside what the app normally does.
+   */
+  discover() {
+    if (!this.client || !this.connected) return;
+    this.client.subscribe(`$aws/things/${this.deviceId}/shadow/get/accepted`, { qos: 0 });
+    this.client.subscribe(`$aws/things/${this.deviceId}/shadow/update/documents`, { qos: 0 });
+    this._publish(C.TOPIC_CONTROL(this.deviceId), JSON.stringify({
+      cid: crypto.randomBytes(4).toString('hex'),
+      time: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      type: 'command',
+      cn: 'getAllPorts',
+      ct: 'mobile',
+      data: {},
+    }));
+    setTimeout(() => this.shadowGet(), 500);
   }
 
   requestAll() {

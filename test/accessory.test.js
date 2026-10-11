@@ -263,3 +263,17 @@ test('display light on D03104 with the 0/115/123 scheme', async (t) => {
   await l.getCharacteristic(Characteristic.Brightness).handleSetRequest(90);
   assert.deepEqual(c.published[0].payload.data.properties, { D03104: 123 });
 });
+
+test('logDeviceData asks for all ports and the shadow, then reads each port', async (t) => {
+  const { dev, client } = await setup('AC0651/10', { logDeviceData: true });
+  t.after(() => dev.stop());
+  const c = client();
+  await new Promise((r) => setTimeout(r, 2200));
+  assert.ok(c.published.some((p) => p.payload.cn === 'getAllPorts'));
+  assert.ok(c.subscribed.some((s) => s.endsWith('/shadow/get/accepted')));
+  c.published.length = 0;
+  c.deliver({ cn: 'getAllPorts', data: [{ portName: 'Status' }, { portName: 'Display' }] });
+  await new Promise((r) => setTimeout(r, 500));
+  const asked = c.published.filter((p) => p.payload.cn === 'getPort').map((p) => p.payload.data.portName);
+  assert.ok(asked.includes('Display'));
+});

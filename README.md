@@ -64,6 +64,7 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 | `sleepSwitch` | `true` | Show the Sleep mode switch |
 | `displayLight` | `true` | Show the display light |
 | `displayLightProperty` | — | Property key of the display light, if it is not detected (see the `Status properties reported by the device` log line) |
+| `logDeviceData` | `false` | Diagnostics: at startup, log every port and the cloud shadow the purifier publishes |
 | `filterChangeThreshold` | `10` | Filter life (%) at or below which HomeKit shows "replace filter" |
 | `pollInterval` | `120` | Seconds between safety-net status polls |
 
