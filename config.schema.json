@@ -20,7 +20,7 @@
       "refreshToken": {
         "title": "Refresh token",
         "type": "string",
-        "description": "Filled in automatically by the login panel (or by the philips-airplus-login command)."
+        "description": "Managed from the panel above, where it is hidden."
       },
       "clientId": {
         "title": "OAuth client id",
@@ -156,7 +156,6 @@
       "expanded": false,
       "items": [
         "email",
-        "refreshToken",
         "clientId",
         "userId"
       ]
