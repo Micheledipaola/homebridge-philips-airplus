@@ -38,7 +38,7 @@ npm install homebridge-philips-airplus-cloud
 sudo npm install -g homebridge-philips-airplus-cloud
 ```
 
-Then restart Homebridge. Node 18.17 or newer and Homebridge 1.6+ (including 2.0 betas) are supported.
+Then restart Homebridge. Node 22, 24 or 26 (the versions Homebridge itself supports) and Homebridge 1.6+ or 2.x are required.
 
 To try the latest unreleased code, install from GitHub instead: `npm install git+https://github.com/Micheledipaola/homebridge-philips-airplus.git`.
 

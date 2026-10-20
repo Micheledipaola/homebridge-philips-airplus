@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.3.10 — 2026-10-20
+
+- Requires Node.js 22, 24 or 26, the versions Homebridge supports; Node 18 and 20 are end-of-life. No functional changes.
+
 ## 0.3.9 — 2026-10-11
 
 - New **Allergens** sensor on models that report the Philips allergen index (AC0651/10, AC1715/11, AC3221). HomeKit has no allergen reading, so the index (1–12) is shown as a second air quality sensor: 1 Excellent, 2–3 Good, 4–6 Fair, 7–9 Inferior, 10–12 Poor. Option `allergenSensor` (default on).
