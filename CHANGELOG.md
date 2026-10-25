@@ -5,6 +5,7 @@ The Home Assistant integration in `custom_components/` is unchanged from upstrea
 ## 0.4.0 — 2026-10-25
 
 - Added the Philips Air+ icon to the README.
+- Now **Verified by Homebridge** (Homebridge Verified plugin).
 - Added a PayPal Donate link and npm funding metadata.
 - Fixed invalid JSON in `package.json` caused by a missing comma after `devDependencies`.
 
