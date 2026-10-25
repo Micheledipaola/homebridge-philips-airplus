@@ -5,11 +5,11 @@
 </table>
 <br />
 
-![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=for-the-badge&logoColor=%23FFFFFF&logo=homebridge)
+![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=flat)  [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070ba?logo=paypal&logoColor=white)](https://paypal.me/micheledipaola)
+
 
 # homebridge-philips-airplus-cloud
 
-[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-0070ba?logo=paypal&logoColor=white)](https://paypal.me/micheledipaola)
 
 Homebridge plugin for **Philips Air+** air purifiers (AC0650, AC0651, AC1715, PureProtect 3200i and others in the same family). It brings them into Apple Home through the Philips/Versuni **cloud**, with the same MQTT protocol used by the official Air+ app and Google Home. No local connection, IP address or port forwarding is needed.
 
