@@ -1,3 +1,5 @@
+<img width="480" height="480" alt="airpluscloud-icon" src="https://github.com/user-attachments/assets/2068eb3b-b277-4de0-b5d9-f61ac2ca7408" />
+
 ![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=for-the-badge&logoColor=%23FFFFFF&logo=homebridge)
 
 # homebridge-philips-airplus-cloud
