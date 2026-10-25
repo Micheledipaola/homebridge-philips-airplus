@@ -1,4 +1,4 @@
-<img width="480" height="480" alt="airpluscloud-icon" src="https://github.com/user-attachments/assets/2068eb3b-b277-4de0-b5d9-f61ac2ca7408" />
+<img width="60" height="60" alt="airpluscloud-icon" src="https://github.com/user-attachments/assets/2068eb3b-b277-4de0-b5d9-f61ac2ca7408" style="display: block; margin-left: auto; margin-right: auto;" />
 
 ![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=for-the-badge&logoColor=%23FFFFFF&logo=homebridge)
 
