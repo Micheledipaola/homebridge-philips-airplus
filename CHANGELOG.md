@@ -2,6 +2,12 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.4.0 — 2026-10-25
+
+- Added the Philips Air+ icon to the README.
+- Added a PayPal Donate link and npm funding metadata.
+- Fixed invalid JSON in `package.json` caused by a missing comma after `devDependencies`.
+
 ## 0.3.10 — 2026-10-20
 
 - Requires Node.js 22, 24 or 26, the versions Homebridge supports; Node 18 and 20 are end-of-life. No functional changes.
