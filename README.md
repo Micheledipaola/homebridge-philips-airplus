@@ -1,4 +1,7 @@
-<img width="60" height="60" alt="airpluscloud-icon" src="https://github.com/user-attachments/assets/2068eb3b-b277-4de0-b5d9-f61ac2ca7408" style="display: block; margin-left: auto; margin-right: auto;" />
+<p align="center">
+  <img width="160" height="160" alt="airpluscloud-icon" src="https://github.com/user-attachments/assets/2068eb3b-b277-4de0-b5d9-f61ac2ca7408" border="1" style="border: 1px solid black;" />
+</p>
+<br />
 
 ![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-blueviolet?color=%23491F59&style=for-the-badge&logoColor=%23FFFFFF&logo=homebridge)
 
