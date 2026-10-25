@@ -51,4 +51,8 @@
   "devDependencies": {
     "homebridge": "^1.8.0"
   }
+  "funding": {
+  "type" : "paypal",
+  "url" : "https://paypal.me/micheledipaola"
+}
 }
