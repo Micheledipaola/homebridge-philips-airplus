@@ -70,11 +70,37 @@
       homebridge.fixScrollHeight();
     }
 
+    // The pending code request (email + vToken) is kept in the page's storage,
+    // so the login can be finished even if the settings page is reloaded or
+    // the panel's server restarts while you read the email (common on phones).
+    const PENDING_KEY = 'philips-airplus-pending-login';
+    const PENDING_MAX_AGE = 15 * 60 * 1000;
+    let pending = null;
+    function savePending(p) {
+      pending = p;
+      try {
+        if (p) localStorage.setItem(PENDING_KEY, JSON.stringify(p));
+        else localStorage.removeItem(PENDING_KEY);
+      } catch {
+        // storage unavailable: keep it in memory only
+      }
+    }
+    function loadPending() {
+      try {
+        const p = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
+        if (p && p.email && p.vToken && Date.now() - p.at < PENDING_MAX_AGE) return p;
+      } catch {
+        // ignore unreadable storage
+      }
+      return null;
+    }
+
     $('send-btn').addEventListener('click', async () => {
       const email = $('email').value.trim();
       homebridge.showSpinner();
       try {
-        await homebridge.request('/send-code', { email });
+        const r = await homebridge.request('/send-code', { email });
+        savePending(r && r.vToken ? { email: r.email || email, vToken: r.vToken, at: Date.now() } : null);
         $('email-echo').textContent = email;
         showStep('code');
         $('code').focus();
@@ -89,9 +115,13 @@
     $('verify-btn').addEventListener('click', async () => {
       homebridge.showSpinner();
       try {
-        const r = await homebridge.request('/verify-code', { code: $('code').value });
+        const body = { code: $('code').value };
+        if (pending) Object.assign(body, { email: pending.email, vToken: pending.vToken });
+        const r = await homebridge.request('/verify-code', body);
+        const loginEmail = (pending && pending.email) || $('email').value.trim();
+        savePending(null);
         Object.assign(configs[0], {
-          email: $('email').value.trim(),
+          email: loginEmail,
           refreshToken: r.refreshToken,
           clientId: r.clientId,
           userId: r.userId,
@@ -109,7 +139,10 @@
       }
     });
 
-    $('back-btn').addEventListener('click', () => showStep('email'));
+    $('back-btn').addEventListener('click', () => {
+      savePending(null);
+      showStep('email');
+    });
     $('email').addEventListener('keydown', (e) => e.key === 'Enter' && $('send-btn').click());
     $('code').addEventListener('keydown', (e) => e.key === 'Enter' && $('verify-btn').click());
 
@@ -119,6 +152,13 @@
     });
 
     showStatus();
+    pending = loadPending();
+    if (pending) {
+      // Back from the mail app: go straight to the code field.
+      $('email').value = pending.email;
+      $('email-echo').textContent = pending.email;
+      showStep('code');
+    }
     homebridge.showSchemaForm();
   })();
 </script>

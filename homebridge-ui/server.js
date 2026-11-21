@@ -21,10 +21,18 @@ const { LoginSession } = require('../src/cloud');
         } catch (e) {
           throw new RequestError(e.message, {});
         }
-        return { sent: true };
+        // The page keeps email + vToken, so the code can still be verified if
+        // this server process is restarted in between (Homebridge UI restarts
+        // it when the settings page reloads, e.g. after switching to the mail
+        // app on a phone to read the code).
+        return { sent: true, email: this.session.email, vToken: this.session.vToken };
       });
 
-      this.onRequest('/verify-code', async ({ code } = {}) => {
+      this.onRequest('/verify-code', async ({ code, email, vToken } = {}) => {
+        if (vToken && email && (!this.session || this.session.vToken !== vToken)) {
+          this.session = new LoginSession({ log: (m) => console.log(`[philips-airplus-ui] ${m}`) });
+          this.session.resume(email, vToken);
+        }
         if (!this.session) throw new RequestError('Request a new code first', {});
         try {
           await this.session.verifyCode(code);

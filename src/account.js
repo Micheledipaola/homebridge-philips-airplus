@@ -111,7 +111,13 @@ class Account {
   async getUserId() {
     if (!this.userId) {
       await this.ensureToken();
-      this.userId = await cloud.fetchUserId(this.accessToken, this.fetch);
+      try {
+        this.userId = await cloud.fetchUserId(this.accessToken, this.fetch);
+      } catch (e) {
+        // Only used to build a nicer MQTT client id; there is a fallback.
+        this.log.debug(`Could not read the user id: ${e.message}`);
+        return null;
+      }
       this._save();
     }
     return this.userId;

@@ -2,6 +2,11 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.5.3 — 2026-11-21
+
+- Fix: logging in from the settings panel failed with "Request a new code first" when the page was reloaded between "Send code" and "Log in" — typically on a phone, after switching to the mail app to read the code, because Homebridge UI then restarts the panel. The pending request is now kept by the page: after a reload the panel reopens on the code field and the code can still be verified.
+- Fix: the login no longer fails if the Philips API refuses to return the account's user id; it is only used to name the cloud connection and has a fallback.
+
 ## 0.5.2 — 2026-11-21
 
 - README: new "Filter notifications" section — how to turn on notifications for the filter alert sensors in the Home app, why a sensor that is already open does not notify, and how to name the sensors so "opened / closed" reads clearly. No code changes.

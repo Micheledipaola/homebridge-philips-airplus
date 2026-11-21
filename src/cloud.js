@@ -107,6 +107,12 @@ class LoginSession {
     return true;
   }
 
+  /** Continue a login started by sendCode() in another process. */
+  resume(email, vToken) {
+    this.email = String(email).trim();
+    this.vToken = vToken;
+  }
+
   async verifyCode(code) {
     if (!this.vToken) throw new CloudError('Request a code first');
     const data = await this._postForm(C.GIGYA_OTP_LOGIN_ENDPOINT, {
@@ -225,7 +231,14 @@ class LoginSession {
       }
     }
 
-    const userId = await fetchUserId(tokens.accessToken, this.fetch);
+    // The user id only makes the MQTT client id nicer; a failure here must
+    // not fail the whole login (the client id has a fallback without it).
+    let userId = null;
+    try {
+      userId = await fetchUserId(tokens.accessToken, this.fetch);
+    } catch (e) {
+      this.log(`Could not read the user id (${e.message}); continuing without it`);
+    }
     return {
       ...tokens,
       userId,
