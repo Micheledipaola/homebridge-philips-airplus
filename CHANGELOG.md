@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.5.2 — 2026-11-21
+
+- README: new "Filter notifications" section — how to turn on notifications for the filter alert sensors in the Home app, why a sensor that is already open does not notify, and how to name the sensors so "opened / closed" reads clearly. No code changes.
+
 ## 0.5.1 — 2026-11-21
 
 - Fix: login and device discovery failed with HTTP 403 ("User is not authorized to access this resource…"). The Philips/Versuni API now rejects requests with the User-Agent the plugin used, `okhttp/4.12.0 (Android 14; Pixel 7)`, before even checking the login. The plugin now sends `okhttp/4.12.0`, as the upstream Home Assistant integration does since 1.1.7. The same API is used on every reconnect, so existing installations should update too.

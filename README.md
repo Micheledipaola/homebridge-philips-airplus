@@ -102,6 +102,27 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 | `filterChangeThreshold` | `10` | Filter life (%) at or below which HomeKit shows "replace filter" |
 | `pollInterval` | `120` | Seconds between safety-net status polls |
 
+## Filter notifications
+
+The Home app shows "Replace filter" inside the purifier but never sends a notification for it. With **Filter alerts** turned on, the plugin adds a contact sensor per filter that Home *can* notify about:
+
+| Sensor | Opens when | Closes when |
+|---|---|---|
+| **Replace filter** | the filter drops to the alert threshold (10% by default) | the filter is replaced and its counter reset |
+| **Clean pre-filter** | the pre-filter is due for cleaning | the pre-filter is cleaned and its counter reset |
+
+To get notified:
+
+1. In the plugin settings → **Options**, turn on **Filter alerts for Home notifications**, save and restart Homebridge.
+2. In the Home app, open the purifier, then each of the two sensors → settings → turn on **Status notifications**. They are off by default.
+3. Also check that notifications are allowed for the Home app in the iPhone's Settings → Notifications → Home.
+
+Good to know:
+
+- Home notifies when a sensor **changes** state. A sensor that is already open when you turn the option on (a filter already due) does not notify until it closes and opens again.
+- The wording "opened / closed" comes from the Home app and cannot be changed by the plugin. Give the sensors names that make the sentence clear, for example **Pre-filter to clean** ("Pre-filter to clean opened" = clean it, "… closed" = done). Names you set in Home are kept across restarts and updates.
+- To be warned earlier, raise **Filter change alert below (%)** in the options.
+
 ## Running alongside Home Assistant or the app
 
 Each client uses its own MQTT client id (`…_hb` for Homebridge, `…_ha` for Home Assistant), so the Air+ app, Home Assistant and Homebridge can all stay connected at the same time.
