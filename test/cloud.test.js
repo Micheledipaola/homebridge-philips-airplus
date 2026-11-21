@@ -120,3 +120,14 @@ test('model lookup accepts the short code from the cloud device list', () => {
   assert.equal(findModel('AC3221/10').key, 'AC3221');
   assert.equal(findModel('AC06'), null);
 });
+
+test('API requests do not use the User-Agent the DaConnect API rejects with 403', async () => {
+  const C = require('../src/constants');
+  assert.notEqual(C.HTTP_USER_AGENT, 'okhttp/4.12.0 (Android 14; Pixel 7)');
+  let ua;
+  await cloud.listDevices('TOKEN', async (url, init) => {
+    ua = init.headers['User-Agent'];
+    return res(200, []);
+  });
+  assert.equal(ua, 'okhttp/4.12.0');
+});

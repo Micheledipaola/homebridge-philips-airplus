@@ -12,7 +12,10 @@ const DEVICE_ENDPOINT = `${API_BASE_URL}/da/user/self/device`;
 const SIGNATURE_ENDPOINT = `${API_BASE_URL}/da/user/self/signature`;
 const USER_SELF_ENDPOINT = `${API_BASE_URL}/da/user/self`;
 
-const HTTP_USER_AGENT = 'okhttp/4.12.0 (Android 14; Pixel 7)';
+// "okhttp/4.12.0 (Android 14; Pixel 7)" is rejected with HTTP 403 by the
+// DaConnect API (before authentication), so do not use it. Same fix as
+// upstream NikGro/philips-air-plus-homeassistant 2a9cfe3.
+const HTTP_USER_AGENT = 'okhttp/4.12.0';
 
 const GIGYA_API_KEY = '4_JGZWlP8eQHpEqkvQElolbA';
 const GIGYA_API_URL = 'https://cdc.accounts.home.id';
