@@ -118,6 +118,9 @@ class DeviceConnection extends EventEmitter {
 
   async _connect() {
     if (this.stopped) return;
+    // From here until the new connection is up, nothing can be published:
+    // user commands are queued, polls are skipped.
+    this.connected = false;
     if (this.client) {
       this.client.removeAllListeners();
       this.client.on('error', () => {});
@@ -135,6 +138,7 @@ class DeviceConnection extends EventEmitter {
       accessToken = this.account.accessToken;
       clientId = buildClientId(await this.account.getUserId(), this.uuid);
     } catch (e) {
+      this.reconnecting = false;
       if (e instanceof AuthExpiredError) {
         this.log.error(`${e.message}. The device stays offline until you log in again.`);
         this.emit('authExpired');
@@ -173,7 +177,13 @@ class DeviceConnection extends EventEmitter {
       this.attempt = 0;
       this.lastMessageAt = Date.now();
       client.subscribe(C.TOPIC_STATUS(this.deviceId), { qos: 0 });
-      this.log.info('Connected to Philips cloud');
+      // Routine reconnects (hourly token renewal) are logged at debug level.
+      if (!this.everConnected) this.log.info('Connected to Philips cloud');
+      else if (this.reconnecting) this.log.debug('Reconnected with the renewed access token');
+      else this.log.info('Reconnected to Philips cloud');
+      this.everConnected = true;
+      this.reconnecting = false;
+      this._flushQueue();
       this.emit('connected');
     });
 
@@ -203,6 +213,7 @@ class DeviceConnection extends EventEmitter {
       if (client !== this.client || this.stopped) return;
       const wasConnected = this.connected;
       this.connected = false;
+      this.reconnecting = false; // a failed routine reconnect is a real outage
       this.client = null;
       const wait = this._backoff(client.__rc);
       if (wasConnected) {
@@ -226,13 +237,39 @@ class DeviceConnection extends EventEmitter {
     }
     if (this.connected && this.tokenUsed !== this.account.accessToken) {
       this.log.debug('Access token changed, reconnecting with new credentials');
+      this.reconnecting = true;
       this._connect();
     }
   }
 
-  _publish(topic, payload, qos = 0) {
+  /** True while connected, or while a routine reconnect is in progress. */
+  get available() {
+    return this.connected || !!this.reconnecting;
+  }
+
+  _flushQueue() {
+    const now = Date.now();
+    const queue = (this.queue || []).filter((q) => now - q.at < 60000);
+    this.queue = [];
+    if (queue.length) this.log.debug(`Sending ${queue.length} command(s) queued during reconnection`);
+    for (const q of queue) this.client.publish(q.topic, q.payload, { qos: q.qos });
+  }
+
+  /**
+   * @param {boolean} [queue] user commands: kept for up to 60 s while the
+   *   connection is being re-established instead of being dropped. Status
+   *   requests are not queued: they are repeated on every (re)connect anyway.
+   */
+  _publish(topic, payload, qos = 0, queue = false) {
     if (!this.client || !this.connected) {
-      this.log.warn('Not connected to the Philips cloud, command dropped');
+      if (queue && !this.stopped) {
+        this.queue = (this.queue || []).slice(-19);
+        this.queue.push({ topic, payload, qos, at: Date.now() });
+        this.log.debug('Not connected right now, command queued until the connection is back');
+        return true;
+      }
+      if (this.reconnecting) this.log.debug('Reconnecting, status request skipped');
+      else this.log.warn('Not connected to the Philips cloud, command dropped');
       return false;
     }
     this.log.debug(`MQTT -> ${topic} ${payload}`);
@@ -245,8 +282,8 @@ class DeviceConnection extends EventEmitter {
   }
 
   setPort(port, properties, qos = 0) {
-    const ok = this._publish(C.TOPIC_CONTROL(this.deviceId), buildCommand('setPort', port, properties), qos);
-    if (ok) this.getPort(port === this.ports.filter_write ? this.ports.filter_read : this.ports.status);
+    const ok = this._publish(C.TOPIC_CONTROL(this.deviceId), buildCommand('setPort', port, properties), qos, true);
+    if (ok && this.connected) this.getPort(port === this.ports.filter_write ? this.ports.filter_read : this.ports.status);
     return ok;
   }
 
@@ -255,8 +292,8 @@ class DeviceConnection extends EventEmitter {
   }
 
   setPower(on) {
-    const ok = this._publish(C.TOPIC_SHADOW_UPDATE(this.deviceId), JSON.stringify({ state: { desired: { powerOn: !!on } } }));
-    if (ok) this.getPort(this.ports.status);
+    const ok = this._publish(C.TOPIC_SHADOW_UPDATE(this.deviceId), JSON.stringify({ state: { desired: { powerOn: !!on } } }), 0, true);
+    if (ok && this.connected) this.getPort(this.ports.status);
     return ok;
   }
 

@@ -73,6 +73,12 @@
         "type": "boolean",
         "default": true
       },
+      "filterAlerts": {
+        "title": "Filter alerts for Home notifications",
+        "type": "boolean",
+        "default": false,
+        "description": "Adds a contact sensor per filter ('Replace filter', 'Clean pre-filter') that opens when the filter needs attention, below the threshold set further down. In the Home app, turn on notifications for these sensors to be alerted."
+      },
       "sleepSwitch": {
         "title": "Show a Sleep mode switch",
         "type": "boolean",
@@ -182,6 +188,7 @@
         "airQualitySensor",
         "allergenSensor",
         "filterSensors",
+        "filterAlerts",
         "sleepSwitch",
         "sleepSwitchStyle",
         "linkComponents",

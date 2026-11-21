@@ -91,6 +91,7 @@ The refresh token rotates on every use; the plugin keeps the current one in `<ho
 | `airQualitySensor` | `true` | Show the PM2.5 sensor |
 | `allergenSensor` | `true` | Show the allergen index as a second air quality sensor (models that report it) |
 | `filterSensors` | `true` | Show filter and pre-filter status |
+| `filterAlerts` | `false` | Add a contact sensor per filter that opens when it needs replacing / cleaning, so the Home app can notify you (turn on notifications for the sensors in Home) |
 | `sleepSwitch` | `true` | Show the Sleep mode switch |
 | `sleepSwitchStyle` | `switch` | `purifier` shows the Sleep control as a second air purifier (purifier icon in Home) that only turns Sleep on/off |
 | `linkComponents` | `false` | Link Sleep, air quality and filters to the purifier. Off: each gets its own labelled tile in the purifier's combined view. On: Home shows them as controls inside the purifier, without labels |

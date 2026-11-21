@@ -292,12 +292,24 @@ class PurifierAccessory {
 
     // --- Filters
     this.filters = {};
+    this.filterAlerts = {};
     const filterDefs = [
-      { kind: 'replace', subtype: 'filter', label: 'Filter' },
-      { kind: 'clean', subtype: 'prefilter', label: 'Pre-filter' },
+      { kind: 'replace', subtype: 'filter', label: 'Filter', alertLabel: 'Replace filter' },
+      { kind: 'clean', subtype: 'prefilter', label: 'Pre-filter', alertLabel: 'Clean pre-filter' },
     ];
     for (const f of filterDefs) {
       const enabled = this._prop(`filter_${f.kind}_remaining`) && cfg.filterSensors !== false;
+      // filterAlerts: the Home app never notifies about filter status, but it
+      // can notify when a contact sensor opens. One sensor per filter, open
+      // while the filter needs replacing / cleaning.
+      const alertSubtype = `${f.subtype}-alert`;
+      if (enabled && cfg.filterAlerts === true) {
+        const a = this._service(Service.ContactSensor, f.alertLabel, alertSubtype);
+        a.getCharacteristic(Characteristic.ContactSensorState).onGet(() => this._filterChange(f.kind));
+        this.filterAlerts[f.kind] = a;
+      } else {
+        this._remove(Service.ContactSensor, alertSubtype);
+      }
       if (!enabled) {
         this._remove(Service.FilterMaintenance, f.subtype);
         continue;
@@ -482,7 +494,8 @@ class PurifierAccessory {
   // ------------------------------------------------------------ setters
 
   _ensureConnected() {
-    if (!this.conn.connected) {
+    // During the hourly token renewal the command is queued, not refused.
+    if (!this.conn.available) {
       throw new this.api.hap.HapStatusError(this.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
   }
@@ -715,6 +728,14 @@ class PurifierAccessory {
       if (life === null) continue;
       s.updateCharacteristic(Characteristic.FilterLifeLevel, life);
       s.updateCharacteristic(Characteristic.FilterChangeIndication, this._filterChange(kind));
+      const alert = this.filterAlerts && this.filterAlerts[kind];
+      if (alert) {
+        const open = this._filterChange(kind); // 1 = CONTACT_NOT_DETECTED ("open")
+        if (alert.getCharacteristic(Characteristic.ContactSensorState).value !== open && open === 1) {
+          this.log.warn(`${kind === 'replace' ? 'Filter needs replacing' : 'Pre-filter needs cleaning'} (${life}% left)`);
+        }
+        alert.updateCharacteristic(Characteristic.ContactSensorState, open);
+      }
     }
   }
 }

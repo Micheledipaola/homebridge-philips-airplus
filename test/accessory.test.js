@@ -342,6 +342,8 @@ test('watchdog reconnects when the device goes silent', async (t) => {
   let tickFn;
   global.setInterval = (fn) => { if (!tickFn) tickFn = fn; return 0; };
   try { dev.start(); } finally { global.setInterval = realSetInterval; }
+  await tick(); await tick(); // let start() finish connecting
+  dev.conn.lastMessageAt = Date.now() - 7 * 60 * 1000;
   await tickFn();
   assert.equal(reconnects, 1);
   // fresh data: no reconnect, a status request instead
@@ -391,4 +393,66 @@ test('no allergen sensor on models without the index, or when disabled', async (
   t.after(() => b.dev.stop());
   assert.equal(b.acc.getServiceById(Service.AirQualitySensor, 'allergen'), undefined);
   assert.ok(b.acc.services.find((x) => x.UUID === Service.AirQualitySensor.UUID && !x.subtype));
+});
+
+test('token renewal: commands are queued during the reconnect, polls are skipped quietly', async (t) => {
+  const warnings = [];
+  const { hap: h, FakeMqttClient: F, fakeAccount: fa, fakePlatform: fp, newAccessory: na, tick: tk } = require('./helpers');
+  const platform = fp();
+  platform.log = { ...platform.log, warn: (m) => warnings.push(m) };
+  const account = fa();
+  const clients = [];
+  const acc = na('Camera', UUID, 'AC0651/10');
+  const dev = new PurifierAccessory(platform, acc, { account, mqttConnect: (u, o) => { const c = new F(u, o); clients.push(c); return c; } });
+  t.after(() => dev.stop());
+  dev.conn.start();
+  await tk(); await tk();
+  clients[0].deliver(status({ D0310D: 2, D0310C: 0 }));
+  // the access token is renewed: the plugin reconnects
+  account.accessToken = 'ACCESS2';
+  const refresh = dev.conn.refreshIfNeeded();
+  await Promise.resolve(); await Promise.resolve(); // token checked, reconnect started
+  assert.equal(dev.conn.connected, false);
+  assert.equal(dev.conn.available, true);
+  // the poll that runs in the same window must not warn
+  dev.conn.getPort('Status');
+  // a HomeKit command in the same window is accepted and queued
+  const p = acc.services.find((x) => x.UUID === h.Service.AirPurifier.UUID && !x.subtype);
+  await p.getCharacteristic(h.Characteristic.TargetAirPurifierState).handleSetRequest(0);
+  await refresh;
+  await tk(); await tk();
+  assert.equal(clients.length, 2);
+  assert.deepEqual(warnings, []);
+  const sent = clients[1].published.filter((x) => x.payload.cn === 'setPort');
+  assert.equal(sent.length, 1, 'queued command sent on the new connection');
+  assert.deepEqual(sent[0].payload.data.properties, { D0310C: 1 });
+});
+
+test('a real outage still refuses HomeKit commands', async (t) => {
+  const { dev, acc } = await setup('AC0651/10');
+  t.after(() => dev.stop());
+  dev.conn.connected = false;
+  dev.conn.reconnecting = false;
+  const p = acc.services.find((x) => x.UUID === Service.AirPurifier.UUID && !x.subtype);
+  await assert.rejects(p.getCharacteristic(Characteristic.Active).handleSetRequest(1));
+});
+
+test('filter alerts: contact sensors open when a filter needs attention', async (t) => {
+  const { dev, acc, client } = await setup('AC0651/10', { filterAlerts: true });
+  t.after(() => dev.stop());
+  const main = acc.getServiceById(Service.ContactSensor, 'filter-alert');
+  const pre = acc.getServiceById(Service.ContactSensor, 'prefilter-alert');
+  assert.equal(main.getCharacteristic(Characteristic.ConfiguredName).value, 'Replace filter');
+  assert.equal(pre.getCharacteristic(Characteristic.ConfiguredName).value, 'Clean pre-filter');
+  client().deliver({ cn: 'getPort', data: { portName: 'filtRd', properties: { D05408: 4800, D0540E: 240, D05207: 720, D0520D: 360 } } });
+  assert.equal(main.getCharacteristic(Characteristic.ContactSensorState).value, 1); // open: 5% left
+  assert.equal(pre.getCharacteristic(Characteristic.ContactSensorState).value, 0); // closed: 50% left
+  client().deliver({ cn: 'getPort', data: { portName: 'filtRd', properties: { D0540E: 4800 } } }); // replaced
+  assert.equal(main.getCharacteristic(Characteristic.ContactSensorState).value, 0);
+});
+
+test('filter alerts are off by default', async (t) => {
+  const { dev, acc } = await setup('AC0651/10');
+  t.after(() => dev.stop());
+  assert.equal(acc.getService(Service.ContactSensor), undefined);
 });

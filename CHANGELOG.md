@@ -2,6 +2,11 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.5.0 — 2026-11-21
+
+- New option **Filter alerts** (`filterAlerts`, default off): one contact sensor per filter, "Replace filter" and "Clean pre-filter", that opens when the filter drops to the alert threshold. The Home app never notifies about filter status, but it can notify when a contact sensor opens. A warning is also written to the Homebridge log.
+- Fix: about once an hour, when the access token was renewed, the log showed "Not connected to the Philips cloud, command dropped" followed by "Connected to Philips cloud". During that reconnection the plugin still thought it was connected. HomeKit commands sent in that window are now queued and delivered as soon as the connection is back, status polls are skipped quietly, and the routine reconnection is logged at debug level only.
+
 ## 0.4.0 — 2026-10-25
 
 - Added the Philips Air+ icon to the README.
