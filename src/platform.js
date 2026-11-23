@@ -56,6 +56,9 @@ class PhilipsAirPlusPlatform {
       this.log.info(`Philips account has ${cloudDevices.length} device(s): ${cloudDevices.map((d) => `${d.name} [${d.model || '?'}]`).join(', ') || '-'}`);
     } catch (e) {
       this.log.warn(`Could not list devices from the cloud (${e.message}); using configured/cached devices`);
+      if (/HTTP 403/.test(e.message)) {
+        this.log.warn('The Philips cloud refused this account. Please run the login from a terminal to see every step and report the output: cd /var/lib/homebridge && npx philips-airplus-login <your Philips email>');
+      }
     }
 
     // Desired set: configured devices (if any), else everything in the account.

@@ -2,6 +2,10 @@
 
 The Home Assistant integration in `custom_components/` is unchanged from upstream and keeps its own history.
 
+## 0.5.4 — 2026-11-23
+
+- Diagnostics for accounts the Philips cloud refuses (HTTP 403 "explicit deny"): the login now logs the result of every step, including the fallback through the Philips HomeID app, and the startup warning explains how to run the login from a terminal to collect them. No change for working installations.
+
 ## 0.5.3 — 2026-11-21
 
 - Fix: logging in from the settings panel failed with "Request a new code first" when the page was reloaded between "Send code" and "Log in" — typically on a phone, after switching to the mail app to read the code, because Homebridge UI then restarts the panel. The pending request is now kept by the page: after a reload the panel reopens on the code field and the code can still be verified.

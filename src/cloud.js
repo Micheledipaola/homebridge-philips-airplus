@@ -220,8 +220,17 @@ class LoginSession {
           redirectUri: C.REDIRECT_URI_HOMEID,
           scopes: C.SCOPES_HOMEID,
         });
-        let hd = await listDevices(homeid.accessToken, this.fetch).catch(() => []);
-        if (!hd.length) hd = await listDevicesViaHomeId(homeid.accessToken, this.fetch).catch(() => []);
+        let hd = await listDevices(homeid.accessToken, this.fetch).catch((e) => {
+          this.log(`Device list with HomeID token failed: ${e.message}`);
+          return [];
+        });
+        if (!hd.length) {
+          hd = await listDevicesViaHomeId(homeid.accessToken, this.fetch).catch((e) => {
+            this.log(`HomeID appliance list failed: ${e.message}`);
+            return [];
+          });
+          this.log(`HomeID appliance list: ${hd.length} device(s)${hd.length ? ` (${hd.map((d) => d.ctn || d.type).join(', ')})` : ''}`);
+        }
         if (hd.length) {
           devices = hd;
           tokens = homeid;
@@ -230,6 +239,7 @@ class LoginSession {
         this.log(`HomeID fallback failed: ${e.message}`);
       }
     }
+    this.log(`Login result: ${devices.length} device(s) with the ${tokens.clientId === C.CLIENT_ID_HOMEID ? 'HomeID' : 'Air+'} client`);
 
     // The user id only makes the MQTT client id nicer; a failure here must
     // not fail the whole login (the client id has a fallback without it).
